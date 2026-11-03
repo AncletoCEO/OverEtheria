@@ -49,7 +49,7 @@ exacto no hay byte-match; sin byte-match no hay "decomp" en el sentido estricto.
 
 - **Vía A** da resultado visible en semanas y valida todo el conocimiento.
 - **Vía B** empieza por los módulos chicos y autocontenidos:
-  `mission98.bin` (192 B) → `menu.bin` (369 KB) → misiones.
+  `mission22.bin` (3.392 B) → `menu.bin` (369 KB) → misiones.
 - Cada módulo decompilado se documenta en `docs/` y se compara contra el original
   (asm-differ/objdiff o diff de comportamiento), sin declarar "hecho" sin evidencia.
 

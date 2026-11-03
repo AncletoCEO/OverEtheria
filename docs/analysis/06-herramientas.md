@@ -7,7 +7,8 @@ Pins en [`../../tools.lock.toml`](../../tools.lock.toml).
 | Herramienta | Pin | Licencia | Rol | Veredicto |
 |---|---|---|---|---|
 | **PS2Recomp (fork)** | `7364cc6` | GPL-3.0 | recompilador + runtime | ✅ imprescindible; **no soporta overlays** |
-| **Ghidra 12.x** | — | Apache-2.0 | decompilador | ✅ herramienta principal de decomp |
+| **Ghidra** | 12.1.4 | Apache-2.0 | decompilador | ✅ herramienta principal de decomp |
+| **ghidra-emotionengine** | v2.1.39 | Apache-2.0 | procesador R5900 (MMI/64-bit) | ✅ imprescindible |
 | **PCSX2 2.9.153** | — | GPL-3.0 | referencia real | ✅ para savestates/A-B; no copiar código |
 | **REA 6.8.0** | `6be6596` | MIT | MCP de RE | ❌ no puede con este ELF hoy; útil para el lado PC |
 | **Legacy recomp** | `6e49d96` | MIT / GPL-3.0 | intento anterior | ✅ referencia de conocimiento |
@@ -28,15 +29,20 @@ Pins en [`../../tools.lock.toml`](../../tools.lock.toml).
 
 ## Ghidra
 
-- Versión probada por el proyecto previo: **12.1.4** (requiere JDK 21).
+- Versión usada: **12.1.4** (requiere JDK 21).
 - El repo legado trae `ExportPS2FunctionsHeadless.java` y el CSV resultante
-  (20.434 funciones).
-- Ghidra carga el ELF como MIPS LE 32 genérico; **no decodifica MMI/R5900** con
-  precisión. El código escalar se decompila bien; el código MMI (matemática vectorial,
-  VU0 macro) sale feo. Para el motor de juego alcanza; para los paths de VU hay que
-  leer asm.
-- El CSV es un **input de build** y hay que auditarlo por overlay (hoy cubre solo
-  `main`).
+  (20.434 filas; **no** se adopta como baseline).
+- **Lenguaje**: el ELF es R5900, no MIPS32. Con `MIPS:LE:32:default` Ghidra decodifica
+  mal los prólogos (`sd`/`ld` como MMI) y la cobertura cae a 14,5 %. Se usa la
+  extensión **ghidra-emotionengine-reloaded v2.1.39** con el lenguaje
+  **`r5900:LE:32:default`** (MMI, 64-bit, VU0 macro). Con eso la cobertura honesta de
+  funciones sube a **61,7 %** y los huecos de código bajan a **50,8 KB**.
+- La extensión se instaló como módulo de procesador en
+  `tools/ghidra/Ghidra/Processors/R5900`; su `Module.manifest` vino vacío y se
+  completó, y `r5900.sla` se compiló con `support/sleigh.bat`.
+- El CSV es un **input de build** para el recomp, pero para la decompilación se usa un
+  export de **solo funciones** (`scripts/ghidra/ExportFunctionsCsv.java`), sin los
+  66.830 labels `entry_` que inflaban la cobertura.
 
 ## PCSX2
 

@@ -53,7 +53,7 @@ su código recompilado, sin caer a "función no encontrada".
 
 ## Fase 5 — Decompilación por módulos
 
-Orden sugerido: `mission98.bin` (192 B) → `menu.bin` → misiones.
+Orden sugerido: `mission22.bin` (3.392 B) → `menu.bin` → misiones.
 
 - Proyecto de Ghidra versionado (solo metadatos: símbolos, structs, comentarios).
 - Nombres y tipos en `decomp/`.

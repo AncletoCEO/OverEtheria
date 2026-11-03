@@ -18,6 +18,33 @@
 | bsdtar (`tar.exe`) | ✔ (libarchive; lee ISO9660) |
 | 7-Zip | ✔ en `C:\Program Files\7-Zip\7z.exe` (no está en `PATH`) |
 | PowerShell | ✔ |
+| **JDK** | Temurin **21.0.13+9** en `tools/jdk` ✔ |
+| **Ghidra** | **12.1.4** en `tools/ghidra` ✔ |
+| **Procesador R5900** | extensión *ghidra-emotionengine-reloaded* **v2.1.39** en `tools/ghidra/Ghidra/Processors/R5900` ✔ |
+| **Ensamblador MIPS** | Zig **0.15.1** (`zig cc -target mipsel-freestanding`) en `tools/zig` ✔ |
+
+## Toolchain de decompilación (instalado 2026-11-03)
+
+Todo vive en `tools/` (ignorado por git); los pins están en `tools.lock.toml`.
+
+```powershell
+$env:JAVA_HOME = "C:\repos\etheria\tools\jdk"
+& tools\ghidra\support\analyzeHeadless.bat        # ayuda / versión
+
+& tools\zig\zig.exe cc -target mipsel-freestanding -c entrada.s -o salida.o
+& tools\zig\zig.exe objcopy -O binary salida.o salida.bin
+```
+
+- **Ghidra 12.1.4** (no 12.2): 12.2 exige JDK 25; 12.1.4 es la versión del intento
+  previo y la verificada por REA, y corre con JDK 21.
+- **R5900**: el lenguaje `r5900:LE:32:default` viene de la extensión
+  *ghidra-emotionengine-reloaded* v2.1.39 (MMI, `sd`/`ld`/`sq`, VU0 macro). Se instaló
+  como módulo de procesador (`Ghidra/Processors/R5900`), se completó su
+  `Module.manifest` (el zip lo trae vacío) y se compiló `r5900.sla` con
+  `support/sleigh.bat`. Sin esto, Ghidra decodifica mal los prólogos y la cobertura
+  cae de 61,7 % a 14,5 %.
+- **Zig** se usa como ensamblador MIPS (clang/LLVM embebido): portable, sin admin y
+  verificado con `addiu`/`jr`/`nop` (`01 00 02 24 08 00 E0 03 00 00 00 00`).
 
 ## Faltante
 
@@ -27,7 +54,6 @@
 | CMake 3.20+ | compilar PS2Recomp y el juego |
 | Compilador C++20 | MSVC o GCC |
 | WSL2 | replicar el entorno Linux del intento previo (no instalado) |
-| JDK 21 + Ghidra 12.x | decompilación |
 | GitHub CLI | crear el repo definitivo (opcional) |
 
 ## Opciones de toolchain

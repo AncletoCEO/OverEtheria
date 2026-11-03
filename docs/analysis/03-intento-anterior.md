@@ -90,10 +90,17 @@ Del `HANDOFF.md` §6 y `decisions.md`:
 
 ## Qué se reutiliza de este intento
 
-- `game/validate_csv.py` y `game/generate_functions_csv.py` (gate del CSV).
+> ⚠️ **Su CSV no es un baseline (2026-11-03).** `ghidra_functions.csv` tiene 20.434
+> filas y 10.057 solapamientos, producto del generador/splitter del recomp. Su 96,5 %
+> de cobertura es artificial: el export fresco de Ghidra cubre el 14,47 % de `main`.
+> Se conserva solo como **referencia histórica**; el mapa de funciones se construye en
+> este proyecto (ver `decomp/analysis/main-coverage.md`).
+
+- `game/validate_csv.py` y `game/generate_functions_csv.py` como **referencia** de
+  criterios (referencias reales, no cercanía a epílogos), no como pipeline a heredar.
 - `game/split_monsters.py` (obligatorio tras cada `ps2_recomp`).
-- `aspec/changes/.../ghidra_functions.csv` (20.434 funciones) como **referencia**,
-  con provenance; hay que auditarlo para overlays.
+- `aspec/changes/.../ghidra_functions.csv` (20.434 filas) solo como **referencia
+  histórica**: no se adopta como baseline (10.057 solapamientos; 96,5 % artificial).
 - Scripts de PCSX2/PINE (`pcsx2_state.py`, `pine_state_gpr.py`) — requieren port a
   Windows (PINE por TCP).
 - El `game_overrides.cpp` del fork (los 250 hooks) como **mapa de conocimiento**,
@@ -103,7 +110,8 @@ Del `HANDOFF.md` §6 y `decisions.md`:
 ## Qué falta en esta máquina
 
 - `work/` (~13 GB): ELF extraído, 18k `.cpp`, binario de 382 MB, savestates y dumps.
-- El proyecto de Ghidra y los savestates de referencia.
+- Los savestates de referencia (el proyecto de Ghidra ya se regeneró en
+  `work/ghidra/SoE`).
 - Toolchain (ver `05`).
 
 Es decir: la **documentación y el conocimiento** sobrevivieron; los artefactos de

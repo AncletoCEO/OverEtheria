@@ -92,7 +92,9 @@ Notas:
 
 - Las misiones **13, 14 y 23 no existen** (contenido cortado); el linker las omitió
   y `OL.BIN` también.
-- `mission98.bin` tiene 192 B de text: es el mejor primer objetivo de decompilación.
+- `mission98.bin` tiene 192 B de text **pero son todos ceros**: es un stub vacío y no
+  sirve como piloto. El primer objetivo es `mission22.bin` (3.392 B, el no vacío más
+  chico; arranca con `addiu sp,sp,-0xb0`).
 - `menu.bin` y `prg_player_0.bin` comparten base `0x100000`: son excluyentes.
 
 ## Por qué el intento anterior no las vio
