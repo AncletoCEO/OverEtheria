@@ -15,8 +15,8 @@ Ante conflicto, prevalece el documento más específico y, por encima de todo,
 ## Guardrails
 
 - **Nunca versionar contenido del juego**: ISO, ELF, `.BIN`, `.PSS`, `.IRX`,
-  capturas o C++ generado. `.gitignore` ya los excluye; verificar `git status`
-  antes de cada commit.
+  capturas, C++ generado o **C decompilado** (`decomp/src`, obra derivada).
+  `.gitignore` ya los excluye; verificar `git status` antes de cada commit.
 - **Nunca ejecutar `git add .`** sin revisar antes que el ISO (4,4 GB) esté
   ignorado. Si aparece en `git status`, frenar y corregir `.gitignore`.
 - **No afirmar sin medir**: cada conclusión técnica debe apoyarse en un artefacto
