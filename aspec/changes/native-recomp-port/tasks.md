@@ -7,7 +7,7 @@
 
 - [x] Elegir toolchain portable (w64devkit GCC 16.2 + CMake 4.4.5 + Python 3.12.10,
       sin admin) y registrar versiones en `docs/analysis/05-entorno.md`.
-- [ ] Clonar el fork `AncletoCEO/Ps2Recomp-of-etheria` en el commit pineado y compilar
+- [x] Clonar el fork `AncletoCEO/Ps2Recomp-of-etheria` en el commit pineado y compilar
       `ps2_recomp` y `ps2_analyzer`.
 - [ ] Extraer `SLES_537.68` y `OL.BIN` a `work/`; generar el C++ de `main` y de cada
       overlay con su CSV y su base.
