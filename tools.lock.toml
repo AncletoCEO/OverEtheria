@@ -1,0 +1,38 @@
+# Pins de herramientas externas.
+# `tools/` está ignorado por git: este archivo es la fuente de verdad de versiones.
+# Formato: TOML plano, sin dependencias.
+
+schema = 1
+tools_dir = "tools"
+
+[rea]
+repo = "https://github.com/morluto/rea"
+commit = "6be6596aaca5a9f584fd726b9ca7733d5b54f55a"
+version = "6.8.0"
+license = "MIT"
+role = "MCP de reverse engineering"
+local_path = "tools/rea"
+note = "Hoy no puede abrir el ELF PS2 (ver docs/analysis/06-herramientas.md)."
+
+[ps2recomp]
+repo = "https://github.com/AncletoCEO/Ps2Recomp-of-etheria"
+upstream = "https://github.com/ran-j/PS2Recomp"
+commit = "7364cc68a25b11cf28bfc6c1d29ad011f318fedd"
+license = "GPL-3.0"
+role = "recompilador estático + runtime del juego"
+local_path = "tools/PS2Recomp"
+note = "Commit pineado por el CI del proyecto legado. No soporta overlays todavía."
+
+[pcsx2]
+version = "2.9.153"
+license = "GPL-3.0"
+role = "emulador de referencia (savestates, PINE)"
+local_path = "tools/pcsx2"
+
+[legacy-recomp]
+repo = "https://github.com/AncletoCEO/Sword-Of-Etheria-PC-Recomp"
+commit = "6e49d96245008c2e7c2aa80e296ec5996437a42d"
+license = "MIT (repo) / GPL-3.0 (runtime enlazado)"
+role = "intento anterior de recompilación; solo referencia"
+local_path = "tools/legacy-recomp"
+note = "No se reutiliza su historia git: este repo arranca de cero."

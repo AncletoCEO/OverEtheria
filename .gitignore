@@ -1,0 +1,42 @@
+# Contenido del juego — NUNCA se versiona.
+# El repo se distribuye sin assets: cada usuario aporta su propio ISO.
+*.iso
+*.elf
+*.bin
+*.pss
+*.irx
+*.img
+*.p2s
+*.mcd
+
+# Artefactos de build y trabajo local.
+work/
+out/
+build/
+cmake-build-*/
+*.obj
+*.pdb
+*.lib
+*.dll
+*.exe
+*.recomp.cpp
+
+# Herramientas externas (clones). Los pins viven en tools.lock.toml.
+tools/
+
+# Estado local de agentes / memoria de máquina.
+.ancleto/
+.opencode/
+.agents/
+.commandcode/
+
+# Logs y volcados de depuración.
+*.log
+ps2_log.txt
+frame_*.png
+*.bmp
+
+# Sistema operativo.
+Thumbs.db
+desktop.ini
+.DS_Store
