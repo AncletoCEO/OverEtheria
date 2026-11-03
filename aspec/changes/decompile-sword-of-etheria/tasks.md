@@ -64,10 +64,10 @@
 
 ## Fase 5 — Arranque de `menu.bin`
 
-- [ ] Triar las funciones de `menu.bin` en subsistemas (init, input, render, audio,
+- [x] Triar las funciones de `menu.bin` en subsistemas (init, input, render, audio,
       navegación) y volcarlo en `decomp/modules/menu.md`.
-- [ ] Elegir el primer subsistema y decompilarlo con el mismo ciclo que `mission22`.
-- [ ] Actualizar el estado del módulo y los símbolos en `decomp/`.
+- [x] Elegir el primer subsistema y decompilarlo con el mismo ciclo que `mission22`.
+- [x] Actualizar el estado del módulo y los símbolos en `decomp/`.
 
 ## Fase 6 — Gate y cierre
 

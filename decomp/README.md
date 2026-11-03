@@ -72,6 +72,6 @@ dónde salió el dato para poder auditarlo.
 |---|---|
 | `main` | ingesta inicial + auditoría de cobertura |
 | `mission22` | piloto decompilado (pseudocódigo) + mapa verificado |
-| `menu` | pendiente |
+| `menu` | triage (1.020 funciones) + subsistema `menu_init` decompilado |
 | `mission01..25` | pendiente |
 | `mission98` | vacío: 192 B de ceros (stub) |
