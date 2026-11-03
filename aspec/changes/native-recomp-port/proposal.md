@@ -157,3 +157,15 @@ backend portable → consola. Cada hito tiene un gate medible.
 - **Refs**: `decomp/analysis/decompilation-summary.md`,
   `decomp/modules/menu.md`.
 - **Estado**: aceptada (2026-11-03).
+
+### portable-mingw-toolchain
+
+- **memory_key**: `portable-mingw-toolchain`
+- **Elección**: usar **w64devkit (GCC 16.2.0 + GNU Make 4.4.1)** con **CMake 4.4.5**
+  y **Python 3.12.10 embebido**, todo en `tools/` y sin admin.
+- **Descartado**: WSL2 (admin + reboot) y MSVC Build Tools (UAC + ~6 GB).
+- **Justificación**: la shell no está elevada; el toolchain portable cubre C++20, make
+  y los scripts sin permisos. Riesgo: no es el path documentado (MSVC/Linux) y puede
+  requerir ajustes de CMake/FFmpeg; WSL2/MSVC quedan como fallback.
+- **Refs**: `docs/analysis/05-entorno.md`, `tools.lock.toml`.
+- **Estado**: aceptada (2026-11-03, durante implementación).
