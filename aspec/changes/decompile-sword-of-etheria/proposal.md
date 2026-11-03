@@ -197,3 +197,15 @@ después habilita ports limpios.
 - **Refs**: `docs/analysis/05-entorno.md`, `docs/analysis/06-herramientas.md`,
   `decomp/analysis/main-coverage.md`, `tools.lock.toml`.
 - **Estado**: aceptada (2026-11-03, durante implementación).
+
+## Seguimiento 2026-11-03 — lote completo
+
+El pipeline se ejecutó sobre los **25 overlays**, un commit por módulo:
+
+- **24/25** módulos con C (`mission98` es un stub de 192 B de ceros).
+- **4.925 funciones** y **98,81 %** de cobertura del código.
+- Resumen: `decomp/analysis/decompilation-summary.md`.
+
+Esto supera el alcance original del change (pipeline + piloto). El **byte-match**
+sigue pendiente (requiere MWCC 2.4.x) y la semántica/nombres de funciones y targets
+externos queda como deuda.

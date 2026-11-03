@@ -74,3 +74,10 @@
 - [x] Integrar `validate-decomp.mjs` al flujo local (y a CI cuando exista).
 - [x] Actualizar `docs/roadmap.md` (fase 5) y `docs/analysis/02` con lo aprendido.
 - [x] Revisar que no haya contenido del juego versionado y cerrar el change.
+
+## Seguimiento 2026-11-03 — lote completo
+
+- [x] Decompilar los 25 overlays (24 con C; `mission98` vacío).
+- [x] Generar símbolos y reporte por módulo.
+- [x] Gate global: 4.925 funciones, 98,81 % de cobertura.
+- [ ] Nombrar funciones/targets y completar la semántica por módulo (deuda).

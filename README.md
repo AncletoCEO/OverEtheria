@@ -12,11 +12,17 @@ ni `.BIN`, ni películas. Cada usuario aporta su propia copia del disco.
 
 ## Estado
 
-**Fase 0 — análisis e infraestructura (2026-11-03).** Todavía no hay build en este
-repo. El trabajo previo vive en `tools/legacy-recomp/` (fuera de git) y se resume en
+**Decompilación anotada completa (2026-11-03).** Los 25 overlays de `OL.BIN` están
+extraídos y decompilados: **24/25 módulos con C** (`mission98` es un stub de 192 B de
+ceros), **4.925 funciones** y **98,81 %** de cobertura del código. Resumen en
+[`decomp/analysis/decompilation-summary.md`](decomp/analysis/decompilation-summary.md).
+
+El **build jugable** todavía no está en este repo: corresponde al track de
+recompilación (`docs/roadmap.md`). El trabajo previo vive en `tools/legacy-recomp/`
+(fuera de git) y se resume en
 [`docs/analysis/03-intento-anterior.md`](docs/analysis/03-intento-anterior.md).
 
-Hallazgos principales del análisis inicial:
+Hallazgos principales:
 
 - El disco es la versión PAL Europa correcta (MD5 `b9c5115b77b7f05fbf14a67df8d3f99d`).
 - El ELF fue compilado con **Metrowerks CodeWarrior PS2 2.4.x** (`MW MIPS C Compiler (2.4.1.01)`).

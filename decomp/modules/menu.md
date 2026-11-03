@@ -52,3 +52,9 @@
 - Nombrar las funciones y los targets externos.
 - Identificar la semántica del módulo y sus subsistemas.
 - Verificar comportamiento contra PCSX2 cuando haya runtime.
+
+## Triage y subsistema init
+
+- Triage completo en [`menu-triage.md`](menu-triage.md): 1.029 funciones, 313 targets externos.
+- El subsistema `menu_init` (entry `sub_100040` + 4 callees) está en [`../src/menu/menu_init.c`](../src/menu/menu_init.c).
+- El C completo del overlay es [`../src/menu/menu.c`](../src/menu/menu.c).

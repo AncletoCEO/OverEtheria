@@ -70,8 +70,11 @@ dónde salió el dato para poder auditarlo.
 
 | Módulo | Estado |
 |---|---|
-| `main` | ingesta inicial + auditoría de cobertura |
-| `mission22` | piloto decompilado (pseudocódigo) + mapa verificado |
-| `menu` | triage (1.020 funciones) + subsistema `menu_init` decompilado |
-| `mission01..25` | pendiente |
+| `main` | ingesta + auditoría de cobertura |
+| `menu` | decompilado completo (1.029 funciones) + triage + `menu_init` |
+| `mission01..25` | decompilados (excepto `mission98`) |
+| `mission22` | piloto original (4 funciones) |
+| `prg_player_0` | decompilado (269 funciones) |
 | `mission98` | vacío: 192 B de ceros (stub) |
+
+Resumen global: [`analysis/decompilation-summary.md`](analysis/decompilation-summary.md).

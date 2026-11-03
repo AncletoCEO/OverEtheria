@@ -60,9 +60,9 @@ Orden sugerido: `mission22.bin` (3.392 B) → `menu.bin` → misiones.
 - Verificación estructural (hash, cobertura, prólogos/epílogos, llamadas) y
   documentación de diferencias; el byte-match requiere MWCC 2.4.x.
 
-**Estado 2026-11-03:** `mission22` decompilado (4 funciones, 832/832 instrucciones) y
-`menu.bin` triado (1.020 funciones, 313 targets) con el subsistema `menu_init`
-decompilado. Faltan las 25 misiones y el resto del menú.
+**Estado 2026-11-03:** decompilación anotada **completa** de los 25 overlays: 24
+módulos con C (`mission98` vacío), **4.925 funciones** y **98,81 %** de cobertura.
+Falta semántica/nombres, byte-match (MWCC) y el runtime jugable.
 
 **Gate**: cada módulo tiene mapa de funciones verificado, C anotado y diferencias
 documentadas.
