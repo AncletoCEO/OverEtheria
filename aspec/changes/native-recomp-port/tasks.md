@@ -9,7 +9,7 @@
       sin admin) y registrar versiones en `docs/analysis/05-entorno.md`.
 - [x] Clonar el fork `AncletoCEO/Ps2Recomp-of-etheria` en el commit pineado y compilar
       `ps2_recomp` y `ps2_analyzer`.
-- [ ] Extraer `SLES_537.68` y `OL.BIN` a `work/`; generar el C++ de `main` y de cada
+- [x] Extraer `SLES_537.68` y `OL.BIN` a `work/`; generar el C++ de `main` y de cada
       overlay con su CSV y su base.
 - [ ] Correr `split_monsters.py` y `validate_csv.py` (0 SHADOW / 0 MIDFUNC / 0 MISSING).
 - [ ] Compilar el juego (`MinGW Makefiles` o `Unix Makefiles`, `-j4`) y correr 60 s;
