@@ -1,6 +1,8 @@
 module,address,size,name,kind,source
 menu,0x100040,352,sub_100040,function,ghidra
 menu,0x1001a0,64,sub_1001a0,function,ghidra
+menu,0x1001e0,140,sub_1001e0,function,ghidra
+menu,0x10026c,152,sub_10026c,function,ghidra
 menu,0x100304,96,sub_100304,function,ghidra
 menu,0x100364,108,sub_100364,function,ghidra
 menu,0x1003d0,56,sub_1003d0,function,ghidra
@@ -10,7 +12,9 @@ menu,0x100480,64,sub_100480,function,ghidra
 menu,0x1004c0,64,sub_1004c0,function,ghidra
 menu,0x100500,64,sub_100500,function,ghidra
 menu,0x100540,64,sub_100540,function,ghidra
+menu,0x100580,80,sub_100580,function,ghidra
 menu,0x1005d0,64,sub_1005d0,function,ghidra
+menu,0x100610,152,sub_100610,function,ghidra
 menu,0x1006a8,64,sub_1006a8,function,ghidra
 menu,0x1006e8,64,sub_1006e8,function,ghidra
 menu,0x100728,64,sub_100728,function,ghidra
@@ -26,8 +30,11 @@ menu,0x100af8,200,sub_100af8,function,ghidra
 menu,0x100bc0,64,sub_100bc0,function,ghidra
 menu,0x100c00,144,sub_100c00,function,ghidra
 menu,0x100c90,64,sub_100c90,function,ghidra
+menu,0x100cd0,152,sub_100cd0,function,ghidra
 menu,0x100d68,64,sub_100d68,function,ghidra
+menu,0x100da8,152,sub_100da8,function,ghidra
 menu,0x100e40,64,sub_100e40,function,ghidra
+menu,0x100e80,184,sub_100e80,function,ghidra
 menu,0x100f38,64,sub_100f38,function,ghidra
 menu,0x100f78,144,sub_100f78,function,ghidra
 menu,0x101008,704,sub_101008,function,ghidra
@@ -54,6 +61,7 @@ menu,0x1017c0,32,sub_1017c0,function,ghidra
 menu,0x1017e0,64,sub_1017e0,function,ghidra
 menu,0x101890,24,sub_101890,function,ghidra
 menu,0x1018a8,184,sub_1018a8,function,ghidra
+menu,0x1019a0,320,sub_1019a0,function,ghidra
 menu,0x101ae0,64,sub_101ae0,function,ghidra
 menu,0x101b20,288,sub_101b20,function,ghidra
 menu,0x101c40,8,sub_101c40,function,ghidra
@@ -992,6 +1000,7 @@ menu,0x159050,192,sub_159050,function,ghidra
 menu,0x159110,224,sub_159110,function,ghidra
 menu,0x1591f0,64,sub_1591f0,function,ghidra
 menu,0x159230,64,sub_159230,function,ghidra
+menu,0x159270,880,sub_159270,function,ghidra
 menu,0x1595e0,64,sub_1595e0,function,ghidra
 menu,0x159620,112,sub_159620,function,ghidra
 menu,0x159690,208,sub_159690,function,ghidra
