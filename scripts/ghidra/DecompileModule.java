@@ -16,6 +16,8 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DecompileModule extends GhidraScript {
     @Override
@@ -50,8 +52,17 @@ public class DecompileModule extends GhidraScript {
                 Address last = toAddr(end - 1);
                 if (getInstructionAt(entry) == null) continue;
 
-                Function existing = getFunctionAt(entry);
-                if (existing != null) fm.removeFunction(entry);
+                // Limpiar cualquier función de Ghidra que se solape con [entry, last].
+                List<Function> conflicts = new ArrayList<>();
+                for (Function f : fm.getFunctions(true)) {
+                    if (f.getEntryPoint().compareTo(last) <= 0
+                            && f.getBody().getMaxAddress().compareTo(entry) >= 0) {
+                        conflicts.add(f);
+                    }
+                }
+                for (Function f : conflicts) {
+                    fm.removeFunction(f.getEntryPoint());
+                }
 
                 Function f = fm.createFunction(cols[0], entry, new AddressSet(entry, last), SourceType.USER_DEFINED);
                 if (f == null) {
