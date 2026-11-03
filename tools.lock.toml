@@ -36,3 +36,31 @@ license = "MIT (repo) / GPL-3.0 (runtime enlazado)"
 role = "intento anterior de recompilación; solo referencia"
 local_path = "tools/legacy-recomp"
 note = "No se reutiliza su historia git: este repo arranca de cero."
+
+[jdk]
+version = "21.0.13+9"
+vendor = "Eclipse Temurin"
+license = "GPL-2.0 with Classpath Exception"
+role = "runtime de Ghidra"
+local_path = "tools/jdk"
+
+[ghidra]
+version = "12.1.4"
+license = "Apache-2.0"
+role = "decompilador headless y GUI"
+local_path = "tools/ghidra"
+note = "12.2 exige JDK 25; 12.1.4 es la versión del intento previo."
+
+[zig]
+version = "0.15.1"
+license = "MIT"
+role = "ensamblador MIPS para verificación (clang/LLVM embebido)"
+local_path = "tools/zig"
+
+[ghidra-emotionengine]
+release = "v2.1.39"
+asset = "ghidra_12.1.4_PUBLIC_20261029_ghidra-emotionengine-reloaded.zip"
+license = "Apache-2.0"
+role = "procesador R5900 (64-bit, MMI, VU0 macro) y analizadores"
+local_path = "tools/ghidra/Ghidra/Processors/R5900"
+note = "El zip trae Module.manifest vacío; se completó y r5900.sla se compiló con support/sleigh."
