@@ -16,11 +16,13 @@ decomp/
   structs/
     README.md
     mw_overlay_header.h
-  src/
-    <module>/<module>.c
+  src/                 LOCAL e ignorado: C decompilado (obra derivada, no se distribuye)
   modules/
     <module>.md        informe: funciones, ABI, evidencia y estado
 ```
+
+> **El C decompilado no se versiona.** Es una obra derivada del juego y queda fuera del
+> repo público (`.gitignore`). Se conserva localmente en `work/decomp-src-backup/`.
 
 - `modules.json` se **regenera**, no se edita a mano:
   `node scripts/extract-overlays.mjs work/elf/OL.BIN --json decomp/modules.json`

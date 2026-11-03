@@ -40,3 +40,6 @@ frame_*.png
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# C decompilado: obra derivada del juego, no se distribuye.
+decomp/src/
