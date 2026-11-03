@@ -39,6 +39,16 @@ El script (sin dependencias) imprime la tabla de archivos del ISO, el formato de
 cada contenedor, los overlays `MWo` y los datos del ELF. También verifica el MD5
 con `--md5`.
 
+## Gate de decompilación
+
+```powershell
+node scripts/validate-decomp.mjs
+```
+
+Valida `decomp/modules.json`, los hashes de los overlays extraídos, los símbolos
+(rango, duplicados) y que no haya binarios del juego en `decomp/`. Corre también en
+CI (`.github/workflows/decomp.yml`).
+
 ## Layout
 
 ```

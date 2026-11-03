@@ -57,10 +57,15 @@ Orden sugerido: `mission22.bin` (3.392 B) → `menu.bin` → misiones.
 
 - Proyecto de Ghidra versionado (solo metadatos: símbolos, structs, comentarios).
 - Nombres y tipos en `decomp/`.
-- Comparación contra el original (asm-differ/objdiff o test de comportamiento).
+- Verificación estructural (hash, cobertura, prólogos/epílogos, llamadas) y
+  documentación de diferencias; el byte-match requiere MWCC 2.4.x.
 
-**Gate**: un módulo recompilado desde fuente propia se comporta igual que el original
-en los casos de prueba definidos.
+**Estado 2026-11-03:** `mission22` decompilado (4 funciones, 832/832 instrucciones) y
+`menu.bin` triado (1.020 funciones, 313 targets) con el subsistema `menu_init`
+decompilado. Faltan las 25 misiones y el resto del menú.
+
+**Gate**: cada módulo tiene mapa de funciones verificado, C anotado y diferencias
+documentadas.
 
 ## Fase 6 — Portabilidad
 

@@ -58,6 +58,14 @@ menu.bin@0x100000        prg_player_0.bin@0x100000
 0x40 bytes (ver [`../formats/mwo.md`](../formats/mwo.md)). Empiezan en `0x800` y
 están alineados a 2048 B.
 
+### Prefijo de 0x40 B
+
+Los **25** módulos tienen `0x40` bytes de ceros al inicio del text. Como el header
+`MWo` mide exactamente `0x40`, la hipótesis es que el loader copia el header a
+`base` y el código a `base + 0x40`. Verificado en `mission22` (primera función en
+`0x154040`) y `menu` (primera función en `0x100040`). Ver
+[`../../decomp/analysis/overlay-abi.md`](../../decomp/analysis/overlay-abi.md).
+
 | Módulo | id | base | text | data | bss | offset |
 |---|---:|---:|---:|---:|---:|---:|
 | `menu.bin` | 0x18 | `0x100000` | 368.960 | 293.376 | 96.000 | `0x41F000` |

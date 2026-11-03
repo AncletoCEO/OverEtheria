@@ -36,6 +36,7 @@ Todavía no hay build en este repo. Lo único ejecutable hoy:
 ```bash
 node scripts/inspect-disc.mjs "Sword of Etheria.iso"
 node scripts/inspect-disc.mjs "Sword of Etheria.iso" --md5
+node scripts/validate-decomp.mjs
 ```
 
 ## Archivos críticos

@@ -71,6 +71,6 @@
 
 ## Fase 6 — Gate y cierre
 
-- [ ] Integrar `validate-decomp.mjs` al flujo local (y a CI cuando exista).
-- [ ] Actualizar `docs/roadmap.md` (fase 5) y `docs/analysis/02` con lo aprendido.
-- [ ] Revisar que no haya contenido del juego versionado y cerrar el change.
+- [x] Integrar `validate-decomp.mjs` al flujo local (y a CI cuando exista).
+- [x] Actualizar `docs/roadmap.md` (fase 5) y `docs/analysis/02` con lo aprendido.
+- [x] Revisar que no haya contenido del juego versionado y cerrar el change.
