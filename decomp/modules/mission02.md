@@ -18,10 +18,27 @@
 
 ## Cobertura
 
-- Funciones creadas: **0**
-- Bytes en funciones: 0 / 28800 (0.00 %)
-- Rango: `0xInfinity` … `0x-Infinity`
+- Funciones creadas: **58**
+- Bytes en funciones: 28672 / 28800 (99.56 %)
+- Rango: `0x154040` … `0x15b0c0`
 - C: `decomp/src/mission02/mission02.c`
+
+## Perfil de llamadas externas
+
+| Target | Llamadas |
+|---|---:|
+| `0x5abf50` | 27 |
+| `0x7988a0` | 17 |
+| `0x798860` | 16 |
+| `0x63e580` | 15 |
+| `0x6d00c0` | 10 |
+| `0x548980` | 9 |
+| `0x547f80` | 9 |
+| `0x7987d0` | 9 |
+| `0x548010` | 9 |
+| `0x64c9b0` | 8 |
+| `0x533e00` | 8 |
+| `0x525880` | 7 |
 
 ## Verificación
 
