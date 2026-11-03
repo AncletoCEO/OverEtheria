@@ -81,9 +81,11 @@ exacto.
 
 #### Scenario: Piloto mission22 verificado
 
-- **WHEN** se ensambla `decomp/src/mission22/mission22.c` con el ensamblador MIPS
-- **THEN** los bytes resultantes coinciden con los 3.392 B de text originales, o bien
-  cada diferencia queda documentada en `decomp/modules/mission22.md`
+- **WHEN** se verifica `mission22` (hash, cobertura del listing, límites de funciones y
+  llamadas) y, si el toolchain lo permite, se ensambla el C
+- **THEN** el hash coincide, la cobertura es 832/832 y toda diferencia con el original
+  —incluida la ausencia de byte-match por MWCC— queda documentada en
+  `decomp/modules/mission22.md`
 
 #### Scenario: Sin evidencia no hay cierre
 

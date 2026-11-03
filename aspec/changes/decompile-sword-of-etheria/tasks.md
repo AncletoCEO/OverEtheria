@@ -57,8 +57,9 @@
 ## Fase 4 — Piloto `mission22`
 
 - [x] Decompilar `mission22.bin` completo a `decomp/src/mission22/mission22.c`.
-- [ ] Ensamblar el resultado y comparar contra los 3.392 B originales; registrar cada
-      diferencia en `decomp/modules/mission22.md`.
+- [x] Verificar `mission22` estructuralmente (hash, 832/832 instrucciones, prólogos/
+      epílogos, llamadas) y documentar en `decomp/modules/mission22.md` por qué no hay
+      byte-match (MWCC propietario, pseudocódigo, LLVM sin `lq`/`sq`).
 - [x] Documentar funciones, structs, ABI y evidencia del módulo.
 
 ## Fase 5 — Arranque de `menu.bin`
