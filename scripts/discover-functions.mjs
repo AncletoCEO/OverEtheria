@@ -43,6 +43,7 @@ const textEnd = base + textSize;
 
 let prefix = 0;
 while (prefix < text.length && text[prefix] === 0) prefix++;
+prefix &= ~3; // el primer byte de una instrucción puede ser 0x00
 const codeStart = base + prefix;
 const starts = new Set([codeStart]);
 

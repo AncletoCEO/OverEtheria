@@ -2,7 +2,9 @@
 # Para cada módulo: descubre funciones, las decompila con Ghidra R5900, genera símbolos,
 # reporte y gate, y commitea el módulo de forma atómica.
 #
-# Uso: pwsh -File scripts/batch-decompile.ps1
+# Uso: pwsh -File scripts/batch-decompile.ps1 [-Force]
+
+param([switch]$Force)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
@@ -23,7 +25,7 @@ $order = @(
 
 foreach ($name in $order) {
   $cFile = "decomp/src/$name/$name.c"
-  if (Test-Path $cFile) {
+  if ((Test-Path $cFile) -and -not $Force) {
     Write-Output "SKIP $name (ya existe $cFile)"
     continue
   }
@@ -57,14 +59,20 @@ foreach ($name in $order) {
   if (-not (Select-String -Path "work/ghidra/import-$name.log" -Pattern 'Import succeeded' -Quiet)) {
     throw "Ghidra falló en $name (ver work/ghidra/import-$name.log)"
   }
+  if (-not (Select-String -Path "work/ghidra/import-$name.log" -Pattern 'DecompileModule:' -Quiet)) {
+    throw "DecompileModule no terminó en $name (ver work/ghidra/import-$name.log)"
+  }
 
-  node scripts/ghidra-to-symbols.mjs --csv "work/ghidra/${name}_functions.csv" --module $name --base $base --size $size --out "decomp/symbols/$name.csv"
-  node scripts/module-report.mjs --module $name --functions "work/ghidra/${name}_functions.csv" --asm "work/ghidra/$name.asm" --c $cFile --out "decomp/modules/$name.md"
+  $functionsCsv = "work/ghidra/${name}_functions.csv"
+  if (-not (Test-Path $functionsCsv)) { throw "sin functions.csv en $name" }
+  $count = (Get-Content $functionsCsv | Measure-Object -Line).Lines - 1
+  if ($count -le 0) { throw "0 funciones creadas en $name" }
+
+  node scripts/ghidra-to-symbols.mjs --csv $functionsCsv --module $name --base $base --size $size --out "decomp/symbols/$name.csv"
+  node scripts/module-report.mjs --module $name --functions $functionsCsv --asm "work/ghidra/$name.asm" --c $cFile --out "decomp/modules/$name.md"
 
   node scripts/validate-decomp.mjs | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "gate de decomp falló en $name" }
-
-  $count = (Get-Content "work/ghidra/${name}_functions.csv" | Measure-Object -Line).Lines - 1
 
   git add "decomp/src/$name" "decomp/symbols/$name.csv" "decomp/modules/$name.md"
   git commit -m "feat(decomp): $name ($count funciones)" -m "Decompilacion anotada de $name.bin ($size B de text), $count funciones, simbolos y reporte de cobertura."

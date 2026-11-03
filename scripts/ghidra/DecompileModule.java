@@ -53,36 +53,40 @@ public class DecompileModule extends GhidraScript {
                 Address last = toAddr(end - 1);
                 if (getInstructionAt(entry) == null) continue;
 
-                // Limpiar cualquier función de Ghidra que se solape con [entry, last].
-                List<Function> conflicts = new ArrayList<>();
-                for (Function f : fm.getFunctions(true)) {
-                    if (f.getEntryPoint().compareTo(last) <= 0
-                            && f.getBody().getMaxAddress().compareTo(entry) >= 0) {
-                        conflicts.add(f);
+                try {
+                    // Limpiar cualquier función de Ghidra que se solape con [entry, last].
+                    List<Function> conflicts = new ArrayList<>();
+                    for (Function f : fm.getFunctions(true)) {
+                        if (f.getEntryPoint().compareTo(last) <= 0
+                                && f.getBody().getMaxAddress().compareTo(entry) >= 0) {
+                            conflicts.add(f);
+                        }
                     }
-                }
-                for (Function f : conflicts) {
-                    fm.removeFunction(f.getEntryPoint());
-                }
+                    for (Function f : conflicts) {
+                        fm.removeFunction(f.getEntryPoint());
+                    }
 
-                Function f = fm.createFunction(cols[0], entry, new AddressSet(entry, last), SourceType.USER_DEFINED);
-                if (f == null) {
-                    println("  no se pudo crear " + cols[0]);
-                    continue;
-                }
+                    Function f = fm.createFunction(cols[0], entry, new AddressSet(entry, last), SourceType.USER_DEFINED);
+                    if (f == null) {
+                        println("  no se pudo crear " + cols[0]);
+                        continue;
+                    }
 
-                DecompileResults res = ifc.decompileFunction(f, 60, monitor);
-                out.println("// ============================================================");
-                out.println("// " + f.getName() + "  " + entry + ".." + last + "  (" + (end - start) + " B)");
-                out.println("// ============================================================");
-                if (res != null && res.decompileCompleted() && res.getDecompiledFunction() != null) {
-                    out.println(res.getDecompiledFunction().getC());
-                } else {
-                    out.println("// ERROR de decompilación: " + (res == null ? "sin resultado" : res.getErrorMessage()));
+                    DecompileResults res = ifc.decompileFunction(f, 60, monitor);
+                    out.println("// ============================================================");
+                    out.println("// " + f.getName() + "  " + entry + ".." + last + "  (" + (end - start) + " B)");
+                    out.println("// ============================================================");
+                    if (res != null && res.decompileCompleted() && res.getDecompiledFunction() != null) {
+                        out.println(res.getDecompiledFunction().getC());
+                    } else {
+                        out.println("// ERROR de decompilación: " + (res == null ? "sin resultado" : res.getErrorMessage()));
+                    }
+                    out.println();
+                    created.add(new String[] { f.getName(), String.format("0x%08X", start), String.format("0x%08X", end), Long.toString(end - start) });
+                    count++;
+                } catch (Exception e) {
+                    println("  error en " + cols[0] + ": " + e.getMessage());
                 }
-                out.println();
-                created.add(new String[] { f.getName(), String.format("0x%08X", start), String.format("0x%08X", end), Long.toString(end - start) });
-                count++;
             }
         }
 
