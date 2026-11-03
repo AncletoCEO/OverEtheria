@@ -164,20 +164,27 @@ if (!checkOnly) {
 }
 
 const clean = modules
-  .map(({ _blob, ...rest }) => ({
-    name: rest.name,
-    id: rest.id,
-    base: hex(rest.base),
-    text: rest.text,
-    data: rest.data,
-    bss: rest.bss,
-    offset: rest.offset,
-    size: rest.size,
-    staticInit: hex(rest.staticInit),
-    staticInitEnd: hex(rest.staticInitEnd),
-    entryCount: rest.entryCount,
-    sha256: rest.sha256,
-  }))
+  .map(({ _blob, ...rest }) => {
+    let prefix = 0;
+    while (prefix < rest.text && _blob[0x40 + prefix] === 0) prefix++;
+    prefix &= ~3; // el primer byte de una instrucción puede ser 0x00: alinear a 4 B
+    return {
+      name: rest.name,
+      id: rest.id,
+      base: hex(rest.base),
+      text: rest.text,
+      data: rest.data,
+      bss: rest.bss,
+      offset: rest.offset,
+      size: rest.size,
+      prefix,
+      entry: hex(rest.base + prefix),
+      staticInit: hex(rest.staticInit),
+      staticInitEnd: hex(rest.staticInitEnd),
+      entryCount: rest.entryCount,
+      sha256: rest.sha256,
+    };
+  })
   .sort((a, b) => a.name.localeCompare(b.name));
 
 const registry = {

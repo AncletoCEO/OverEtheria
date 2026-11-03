@@ -33,6 +33,7 @@ public class DecompileModule extends GhidraScript {
         ifc.openProgram(currentProgram);
 
         int count = 0;
+        List<String[]> created = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(args[0]));
              PrintWriter out = new PrintWriter(new FileWriter(args[1]))) {
 
@@ -80,7 +81,25 @@ public class DecompileModule extends GhidraScript {
                     out.println("// ERROR de decompilación: " + (res == null ? "sin resultado" : res.getErrorMessage()));
                 }
                 out.println();
+                created.add(new String[] { f.getName(), String.format("0x%08X", start), String.format("0x%08X", end), Long.toString(end - start) });
                 count++;
+            }
+        }
+
+        if (args.length > 2) {
+            try (PrintWriter csv = new PrintWriter(new FileWriter(args[2]))) {
+                csv.println("Name,Start,End,Size");
+                for (String[] row : created) {
+                    csv.println(String.join(",", row));
+                }
+            }
+        }
+
+        if (args.length > 3) {
+            try (PrintWriter asm = new PrintWriter(new FileWriter(args[3]))) {
+                for (ghidra.program.model.listing.Instruction ins : currentProgram.getListing().getInstructions(true)) {
+                    asm.println(ins.getAddress() + "  " + ins.toString());
+                }
             }
         }
 
