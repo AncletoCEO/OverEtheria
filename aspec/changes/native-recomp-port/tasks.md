@@ -11,7 +11,7 @@
       `ps2_recomp` y `ps2_analyzer`.
 - [x] Extraer `SLES_537.68` y `OL.BIN` a `work/`; generar el C++ de `main` y de cada
       overlay con su CSV y su base.
-- [ ] Correr `split_monsters.py` y `validate_csv.py` (0 SHADOW / 0 MIDFUNC / 0 MISSING).
+- [x] Correr `split_monsters.py` y `validate_csv.py` (0 SHADOW / 0 MIDFUNC / 0 MISSING).
 - [ ] Compilar el juego (`MinGW Makefiles` o `Unix Makefiles`, `-j4`) y correr 60 s;
       guardar el baseline de logs (`vblank`, `gs:present`, `frame-loop`).
 - [ ] Documentar tiempos, flags, memoria y problemas del build.
