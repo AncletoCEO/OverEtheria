@@ -1,0 +1,11 @@
+# Normalizar finales de línea: el repo se usa en Windows y en WSL/Linux.
+* text=auto eol=lf
+
+# Binarios (nunca se versionan, pero por si acaso).
+*.png binary
+*.jpg binary
+*.iso binary
+*.bin binary
+*.elf binary
+*.pss binary
+*.irx binary
