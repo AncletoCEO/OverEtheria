@@ -34,6 +34,19 @@ jobs:
           $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { 'dev' }
           ./scripts/package-windows.ps1 -Build build/launcher -Out dist -Version $version
 
+      - name: Check package
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem dist/*.zip | Select-Object -First 1
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $z = [IO.Compression.ZipFile]::OpenRead($zip.FullName)
+          $names = $z.Entries | ForEach-Object { $_.FullName }
+          $z.Dispose()
+          foreach ($need in 'overetheria-launcher.exe', 'SDL2.dll', 'scripts/prepare-game.ps1', 'patches/ps2-native-recomp-sword.patch') {
+            if ($names -notcontains $need) { throw "falta $need en $($zip.Name)" }
+          }
+          Write-Output "$($zip.Name): $($names.Count) entradas, contenido esperado"
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows
