@@ -68,10 +68,30 @@ Rama `visual/advance-display-and-main-loop`, 2026-11-03:
 | Cutscene inicial | escena 3D, retrato y diálogo, ~33 fps (compilando VU en vivo) |
 | Diálogo con varios personajes | el texto avanza con cruz y cambia de retrato, ~36 fps |
 | Diálogo a dos voces | dos retratos simultáneos (Almira y Cain) con caja superior e inferior, ~39 fps |
+| Gameplay (inicio de misión) | escena 3D de combate con tutorial `Tap ⬜ for combo attack`, ~48 fps |
 
 El log de la corrida muestra `[ee-live] switched in the library of window
 0x00100000` y `[vu-live] N new vector programs compiled`, es decir el runtime
 traduce y compila lo que falta mientras el juego corre, sin `missing code`.
+
+La corrida de 8 minutos (480 s, pulsos de cruz cada ~3 s) atravesó la cutscene
+completa y entró al gameplay sin una sola detención por `missing code`; la ventana
+quedó entre 36 y 50 fps (VU compilando al vuelo al principio de cada escena).
+
+## Estados guardados
+
+`ps2run` acepta `--save-state <frame>:<archivo>` y `--load-state <archivo>|newest`:
+
+```powershell
+# guardar durante la corrida
+ps2run ... --save-state 16000:work\state-gameplay.state
+# retomar directo en gameplay (sin repetir la cutscene)
+ps2run games/sword/disc/SLES_537.68 --disc games/sword/disc.iso --window `
+  --load-state work\state-gameplay.state
+```
+
+Esto es la vía para iterar misiones: un estado por escena, y las corridas siguientes
+arrancan ahí.
 
 ## Reproducción de la corrida
 

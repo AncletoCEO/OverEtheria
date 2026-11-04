@@ -27,7 +27,8 @@ de punta a punta: falta explorar las 25 misiones y pulir el runtime.
 | Diálogo de memory card | ✅ texto del juego, opciones Yes/No |
 | Menú principal | ✅ `Story Mode / Start New` |
 | Cutscene inicial | ✅ escena 3D, retrato y diálogo, ~33 fps |
-| Primera misión jugable | ⏳ pendiente |
+| Gameplay (inicio de misión) | ✅ combate 3D con tutorial `Tap ⬜ for combo attack`, ~48 fps |
+| Misión completa | ⏳ pendiente (input, cámara y fin de misión) |
 | Port a otras consolas | ⏳ pendiente (backends del runtime) |
 
 Medición completa y parches: [`docs/analysis/07-runtime-nativo.md`](docs/analysis/07-runtime-nativo.md).

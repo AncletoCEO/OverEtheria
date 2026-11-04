@@ -50,11 +50,12 @@
 
 ## Fase 3 — Primera misión jugable
 
-- [ ] Registrar el overlay de la primera misión con el mismo método
-      (ventana + entradas).
-- [ ] Verificar input, cámara y colisiones.
+- [x] Entrar al gameplay: la corrida atraviesa la cutscene y llega a la escena 3D de
+      combate con el tutorial `Tap ⬜ for combo attack` (~48 fps).
+- [x] Guardar estados con `--save-state` para retomar sin repetir la cutscene.
+- [ ] Verificar input de combate (cuadrado), cámara y colisiones.
+- [ ] Confirmar que la misión se completa y termina.
 - [ ] Medir el tick y corregir el timing.
-- [ ] Gate de misión: entrada del jugador, avance y fin de misión.
 
 **Gate**: una misión jugable de punta a punta (aunque sea sin audio).
 
