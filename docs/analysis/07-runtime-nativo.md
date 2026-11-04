@@ -40,7 +40,8 @@ git -C tools/ps2-native-recomp apply ../../patches/ps2-native-recomp-sword.patch
 1. **`scripts/patch-elf-window.py`** (invocado desde `port.sh` tras extraer el ELF):
    convierte el `PT_LOAD` de `0x100000` en una **ventana de código**
    (`filesz=0 memsz=0xA1B40`). Sin eso el tool no pasa `--overlays` y el menú
-   (que se carga en runtime) no existe para el traductor.
+   (que se carga en runtime) no existe para el traductor. La ruta se resuelve
+   relativa al clon; `PS2_ELF_WINDOW_PATCH` la sobreescribe.
 2. **Cabecera `MWo3` en `recomp/main.cpp`**: la imagen del overlay se carga *verbatim*
    en su base, cabecera incluida. El parche lee `base` (`+0x08`) y `text` (`+0x0C`) y
    marca como ejecutable sólo el rango de texto; el resto (data, tablas de punteros)
