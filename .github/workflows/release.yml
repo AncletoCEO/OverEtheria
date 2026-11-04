@@ -15,11 +15,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Toolchain (llvm-mingw)
+        shell: pwsh
+        run: |
+          curl -L -o llvm-mingw.zip https://github.com/mstorsjo/llvm-mingw/releases/download/20261020/llvm-mingw-20261020-ucrt-x86_64.zip
+          Expand-Archive llvm-mingw.zip -DestinationPath C:\llvm-mingw
+          "C:\llvm-mingw\llvm-mingw-20261020-ucrt-x86_64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+
       - name: Configure
-        run: cmake -S launcher -B build/launcher -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S launcher -B build/launcher -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
       - name: Build
-        run: cmake --build build/launcher --config Release
+        run: cmake --build build/launcher
 
       - name: Package
         shell: pwsh

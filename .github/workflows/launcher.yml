@@ -21,11 +21,19 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
 
+      - name: Toolchain (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          curl -L -o llvm-mingw.zip https://github.com/mstorsjo/llvm-mingw/releases/download/20261020/llvm-mingw-20261020-ucrt-x86_64.zip
+          Expand-Archive llvm-mingw.zip -DestinationPath C:\llvm-mingw
+          "C:\llvm-mingw\llvm-mingw-20261020-ucrt-x86_64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+
       - name: Configure
-        run: cmake -S launcher -B build/launcher -DOE_CONSOLE=ON -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S launcher -B build/launcher -G Ninja -DOE_CONSOLE=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 
       - name: Build
-        run: cmake --build build/launcher --config Release
+        run: cmake --build build/launcher
 
       - name: Smoke test (Unix)
         if: runner.os == 'Linux'
