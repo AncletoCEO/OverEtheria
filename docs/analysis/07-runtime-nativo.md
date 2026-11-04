@@ -73,6 +73,15 @@ traduce y compila lo que falta mientras el juego corre, sin `missing code`.
 
 ## Reproducción de la corrida
 
+Un comando, con la secuencia de botones ya medida:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/play-sword.ps1 `
+  -Seconds 120 -Cutscene Fast -Shot work/shot.png
+```
+
+Equivale a lanzar `ps2run` con estos `--press`:
+
 ```powershell
 $exe = 'tools\ps2-native-recomp\build\native-sword\ps2run.exe'
 $presses = @(
