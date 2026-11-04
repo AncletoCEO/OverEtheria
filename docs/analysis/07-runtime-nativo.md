@@ -138,6 +138,22 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\capture-window.ps1 -
 - El diálogo se dibuja con retratos intercambiables y texto con efecto de máquina de
   escribir; no hubo `missing code` en ninguna de las corridas.
 
+## Contenido extraído: jugar sin ISO
+
+Igual que en Yakumo, el ISO se usa **una sola vez**: la preparación extrae todo su
+contenido a una carpeta y después el juego lee de ahí.
+
+- Extractor: `scripts/extract-disc.py` (ISO 9660, capas simples y dobles). Escribe el
+  árbol de archivos sin el `;1` y un marcador `.extracted` con serial y tamaño.
+- Runtime: `patches/ps2-native-recomp-sword.patch` agrega el modo carpeta a
+  `runtime/src/disc.cpp`. Cada archivo ocupa un rango de sectores virtuales y un
+  `read(lba, count)` se sirve del archivo que lo contiene; el juego pide sectores y no
+  nota la diferencia. Lo que pasa el final de un archivo se rellena con ceros, como el
+  relleno del disco.
+- Uso: `ps2run ... --disc <carpeta>` (el launcher lo hace solo si `.extracted` existe).
+
+Tamaño medido: 87 archivos, 4,5 GB en `work/game/disc`; el ISO se puede borrar después.
+
 ## Memory card
 
 El runtime trae la emulación de tarjeta PS2 en `runtime/src/iop/sio2.cpp`; sólo hay que

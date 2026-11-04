@@ -73,6 +73,26 @@ std::string tail(const std::string &path, std::size_t lines) {
     return out;
 }
 
+std::pair<std::size_t, std::uint64_t> dir_stats(const std::string &dir) {
+    std::size_t files = 0;
+    std::uint64_t bytes = 0;
+    std::error_code ec;
+    if (dir.empty()) return {0, 0};
+    for (fs::recursive_directory_iterator it(fs::u8path(dir), fs::directory_options::skip_permission_denied, ec), end; it != end;
+         it.increment(ec)) {
+        if (ec) break;
+        std::error_code file_error;
+        if (it->is_regular_file(file_error) && !file_error) {
+            const auto size = fs::file_size(*it, file_error);
+            if (!file_error) {
+                ++files;
+                bytes += size;
+            }
+        }
+    }
+    return {files, bytes};
+}
+
 std::string suggested_game_dir() {
     // <repo>/tools/ps2-native-recomp when the launcher lives inside the repo.
     fs::path dir = fs::current_path();
@@ -148,6 +168,8 @@ int main(int argc, char **argv) {
     const bool had_config = oe::load_config(config);
     if (config.game.empty()) config.game = suggested_game_dir();
     if (config.memcard.empty()) config.memcard = oe::default_memcard();
+    if (config.assets.empty()) config.assets = oe::default_assets();
+    if (config.serial.empty()) config.serial = "SLES_537.68";
     if (had_config) oe::read_keys_ini(config);
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0) {
@@ -253,7 +275,7 @@ int main(int argc, char **argv) {
         ImGui::SameLine();
         ImGui::TextDisabled("launcher %s · Sword of Etheria (SLES_537.68)", kVersion);
         ImGui::SameLine();
-        const bool ready = iso_ok && oe::game_built(config);
+        const bool ready = (iso_ok || oe::assets_ready(config)) && oe::game_built(config);
         ImGui::TextColored(ready ? ImVec4(0.4f, 0.9f, 0.5f, 1.0f) : ImVec4(0.95f, 0.75f, 0.3f, 1.0f),
                            ready ? "listo para jugar" : "falta preparar");
         ImGui::Separator();
@@ -276,6 +298,7 @@ int main(int argc, char **argv) {
                 if (ImGui::Button("Comprobar")) {
                     iso = oe::check_iso(config.iso);
                     iso_ok = iso.ok;
+                    if (iso.ok) config.serial = iso.serial;
                 }
                 ImGui::SameLine();
                 ImGui::TextDisabled("%s", config.iso.empty() ? "ningún archivo" : config.iso.c_str());
@@ -313,6 +336,24 @@ int main(int argc, char **argv) {
                     ImGui::TextUnformatted(log.empty() ? "Sin registros todavía." : log.c_str());
                     ImGui::EndChild();
                 }
+
+                ImGui::Spacing();
+                ImGui::Separator();
+                ImGui::Text("Contenido del juego (el ISO extraído)");
+                char assets_buffer[1024];
+                std::snprintf(assets_buffer, sizeof assets_buffer, "%s", config.assets.c_str());
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::InputText("##assets", assets_buffer, sizeof assets_buffer)) config.assets = assets_buffer;
+                const bool extracted = oe::assets_ready(config);
+                if (extracted) {
+                    const auto [files, bytes] = dir_stats(config.assets);
+                    ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.5f, 1.0f), "Extraído: %zu archivos, %.1f GB — el ISO ya no hace falta.",
+                                       files, static_cast<double>(bytes) / 1e9);
+                } else {
+                    ImGui::TextColored(ImVec4(0.95f, 0.75f, 0.3f, 1.0f),
+                                       "Sin extraer: «Preparar juego» copia el contenido del ISO una sola vez.");
+                }
+                if (ImGui::Button("Abrir carpeta del contenido")) oe::open_path(config.assets);
                 ImGui::EndTabItem();
             }
 

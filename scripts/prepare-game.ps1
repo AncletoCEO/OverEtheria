@@ -2,26 +2,31 @@
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/prepare-game.ps1 -Iso "D:\Sword of Etheria.iso"
 #
-# Hace tres cosas, cada una sólo si hace falta:
+# Hace cuatro cosas, cada una sólo si hace falta:
 #   1. aplica patches/ps2-native-recomp-sword.patch al clon del runtime;
 #   2. compila eerecomp/vurecomp (scripts/setup.sh --native-only);
-#   3. construye el juego desde el ISO (scripts/port.sh sword <iso> --native-only).
+#   3. construye el juego desde el ISO (scripts/port.sh sword <iso> --native-only);
+#   4. extrae TODO el contenido del ISO a -Data\disc, para no volver a necesitar el ISO.
 #
-# Nada de esto versiona contenido del juego: todo queda en tools/ (ignorado).
-# El progreso se escribe en -Log (el launcher lo lee mientras corre).
+# Nada de esto versiona contenido del juego: el ISO del usuario y lo extraído quedan en
+# su equipo (tools/ y work/ están ignorados). El progreso se escribe en -Log.
 param(
     [Parameter(Mandatory = $true)][string]$Iso,
     [string]$Game = '',
+    [string]$GameId = 'sword',
+    [string]$Data = '',
     [string]$Log = ''
 )
 
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 if (-not $Game) { $Game = Join-Path $PSScriptRoot '..\tools\ps2-native-recomp' }
+if (-not $Data) { $Data = Join-Path $repo 'work\game' }
 $Game = (Resolve-Path $Game).Path
 $Iso = (Resolve-Path $Iso).Path
-if (-not $Log) { $Log = Join-Path (Join-Path $repo 'work') 'prepare.log' }
+if (-not $Log) { $Log = Join-Path $repo 'work\prepare.log' }
 New-Item -ItemType Directory -Force (Split-Path -Parent $Log) | Out-Null
+New-Item -ItemType Directory -Force $Data | Out-Null
 '' | Out-File -FilePath $Log -Append -Encoding utf8
 
 function Say($text) {
@@ -51,8 +56,14 @@ $bash = 'C:\Program Files\Git\bin\bash.exe'
 if (-not (Test-Path $bash)) { $bash = 'C:\Program Files (x86)\Git\bin\bash.exe' }
 if (-not (Test-Path $bash)) { Say 'no se encontró Git Bash (lo necesita el pipeline del runtime)'; exit 1 }
 
+$python = Join-Path $repo 'tools\python\python.exe'
+if (-not (Test-Path $python)) { $python = 'python' }
+
 $game_posix = $Game -replace '\\', '/'
 $iso_posix = $Iso -replace '\\', '/'
+$repo_posix = $repo -replace '\\', '/'
+$disc_dir = Join-Path $Data 'disc'
+$disc_posix = ($disc_dir -replace '\\', '/')
 
 # 1. parches propios sobre el runtime
 $patch = Join-Path $repo 'patches\ps2-native-recomp-sword.patch'
@@ -75,10 +86,21 @@ if (-not (Test-Path $eerecomp)) {
 }
 
 # 3. juego desde el ISO
-RunStep "construyendo el juego desde $Iso" "cd '$game_posix' && bash scripts/port.sh sword '$iso_posix' --native-only"
+RunStep "construyendo el juego $GameId desde $Iso" "cd '$game_posix' && bash scripts/port.sh $GameId '$iso_posix' --native-only"
 if ($script:last_code -ne 0) { Say 'port.sh falló (mirá las líneas de arriba)'; exit 1 }
 
 $run = Join-Path $Game 'build\native-sword\ps2run.exe'
 if (-not (Test-Path $run)) { Say 'port.sh terminó sin ps2run.exe'; exit 1 }
+
+# 4. contenido del ISO, para no volver a usarlo
+$marker = Join-Path $disc_dir '.extracted'
+if (Test-Path $marker) {
+    Say "contenido ya extraído en $disc_dir"
+} else {
+    RunStep "extrayendo el contenido del ISO a $disc_dir (una sola vez)" "cd '$repo_posix' && '$python' scripts/extract-disc.py '$iso_posix' '$disc_posix'"
+    if ($script:last_code -ne 0) { Say 'la extracción falló'; exit 1 }
+}
+
 Say "listo: $run"
+Say "disco extraído: $disc_dir"
 exit 0

@@ -15,6 +15,22 @@ juego. Pide tu ISO en el primer arranque y construye el juego **en tu equipo**.
   del mouse y escribe `keys.ini` del runtime.
 - **Guardado**: memory card de 8 MB; si el archivo no existe, el juego la formatea al
   guardar. Podés abrir la carpeta o restablecer la tarjeta.
+
+## Contenido extraído
+
+«Preparar juego» extrae **todo el ISO** a `data/game/disc` (87 archivos, ~4,5 GB) y el
+juego lee de esa carpeta: **el ISO sólo se necesita una vez**. El runtime lo soporta
+con el parche de `patches/` (`--disc` acepta una carpeta). La extracción es reanudable
+y deja `.extracted` como marcador; «Jugar» la usa automáticamente y, si no existe,
+cae al ISO.
+
+## Versiones soportadas
+
+| Disco | Serial | Estado |
+|---|---|---|
+| PAL (`Sword of Etheria, The (Europe)`) | `SLES_537.68` | completo |
+| PAL *undub* v1.0 | `SLES_537.68` | completo (mismo ejecutable) |
+| Japón (`Oz`) | `SLPM_660.33` | reconocido y construible; el menú necesita el mismo registro de overlay que la versión PAL |
 - **Jugar/Detener**: lanza `ps2run` con el ISO, la tarjeta, la resolución y el formato
   elegidos.
 

@@ -20,9 +20,11 @@ using Bindings = std::array<Binding, kActionCount>;
 Bindings default_bindings();
 
 struct Config {
-    std::string iso;        // the user's disc image
+    std::string iso;        // the user's disc image (only needed to prepare)
     std::string game;       // the ps2-native-recomp checkout (built game lives inside)
     std::string memcard;    // memory card file (created on first save)
+    std::string assets;     // the ISO extracted to a folder; the game reads this, not the ISO
+    std::string serial;     // SLES_537.68 (Europe) or SLPM_660.33 (Japan)
     int scale = 1;          // inner resolution: 1, 2 or 3
     bool fullscreen = false;
     bool widescreen = false;
@@ -39,6 +41,8 @@ struct IsoCheck {
 std::string data_dir();                 // where settings, the card and saves live
 std::string config_path();              // <data>/launcher.ini
 std::string default_memcard();          // <data>/memcard.ps2
+std::string default_assets();           // <data>/game/disc (the ISO extracted)
+bool assets_ready(const Config &c);     // the extraction finished
 std::string quick_dir();                // <data>/quick (keys.ini, quick saves)
 std::string game_exe(const Config &c);  // build/native-sword/ps2run.exe
 std::string game_elf(const Config &c);  // games/sword/disc/SLES_537.68

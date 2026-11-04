@@ -106,15 +106,145 @@ index e7ebcb1..034d5b1 100644
              programs.push_back(analyse(images.back(), seeds, {}));
              overlay_code += code_size(programs.back());
              translations.push_back({&images.back(), &programs.back(), nullptr, "m_" + o.name + "_", false, o.name, o.size,
+diff --git a/runtime/src/disc.cpp b/runtime/src/disc.cpp
+index 340aba7..d4b2954 100644
+--- a/runtime/src/disc.cpp
++++ b/runtime/src/disc.cpp
+@@ -7,7 +7,10 @@
+ #include <cctype>
+ #include <cstdio>
+ #include <cstring>
++#include <filesystem>
+ #include <map>
++#include <mutex>
++#include <vector>
+ #include <set>
+ 
+ namespace ps2::disc {
+@@ -86,9 +89,114 @@ void index_layer(std::uint32_t pvd_sector, std::uint32_t base) {
+ 
+ void self_check();
+ 
++// A disc extracted to a folder: each file owns a range of sectors, in name order, and a
++// read is served from the file that holds it. The game asks for sectors, so it cannot
++// tell the difference.
++struct FolderFile {
++    std::uint32_t first = 0;
++    std::uint32_t count = 0;
++    std::uint64_t size = 0;
++    std::string path;
++    std::FILE *file = nullptr;
++};
++
++std::vector<FolderFile> g_folder;
++std::mutex g_folder_lock;
++
++void close_folder() {
++    std::lock_guard<std::mutex> hold(g_folder_lock);
++    for (auto &f : g_folder)
++        if (f.file) std::fclose(f.file);
++    g_folder.clear();
+ }
+ 
++bool open_folder(const std::string &dir) {
++    namespace fs = std::filesystem;
++    std::error_code ec;
++    std::vector<fs::path> files;
++    for (fs::recursive_directory_iterator it(fs::u8path(dir), fs::directory_options::skip_permission_denied, ec), end; it != end;
++         it.increment(ec)) {
++        if (ec) break;
++        std::error_code is_file;
++        if (it->is_regular_file(is_file) && !is_file) files.push_back(it->path());
++    }
++    if (files.empty()) {
++        std::fprintf(stderr, "[disc] %s: the extracted disc has no files\n", dir.c_str());
++        return false;
++    }
++    std::sort(files.begin(), files.end());
++    close_folder();
++    std::uint32_t next = 16;  // the descriptor area stays unused, as on a disc
++    std::size_t skipped = 0;
++    for (const auto &p : files) {
++        std::error_code size_error;
++        const std::uint64_t size = fs::file_size(p, size_error);
++        if (size_error) continue;
++        const std::uint64_t sectors = (size + kSector - 1) / kSector;
++        if (!sectors) {  // an empty file has no sectors to read
++            ++skipped;
++            continue;
++        }
++        std::string rel = fs::relative(p, fs::u8path(dir), size_error).generic_string();
++        if (!rel.empty() && rel.front() == '/') rel.erase(rel.begin());
++        FolderFile f;
++        f.first = next;
++        f.count = static_cast<std::uint32_t>(sectors);
++        f.size = size;
++        f.path = p.string();
++        g_folder.push_back(std::move(f));
++        g_index[upper(rel)] = Entry{next, static_cast<std::uint32_t>(size), false};
++        next += f.count;
++    }
++    if (g_folder.empty()) {
++        std::fprintf(stderr, "[disc] %s: every file is empty\n", dir.c_str());
++        return false;
++    }
++    std::sort(g_folder.begin(), g_folder.end(), [](const FolderFile &a, const FolderFile &b) { return a.first < b.first; });
++    g_size = static_cast<std::uint64_t>(next) * kSector;
++    g_layer1 = 0;
++    g_indexed = true;
++    g_reader = [](std::uint64_t offset, void *out, std::size_t bytes) -> std::size_t {
++        std::lock_guard<std::mutex> hold(g_folder_lock);
++        const std::uint32_t sector = static_cast<std::uint32_t>(offset / kSector);
++        auto it = std::upper_bound(g_folder.begin(), g_folder.end(), sector,
++                                   [](std::uint32_t s, const FolderFile &f) { return s < f.first; });
++        if (it == g_folder.begin()) return 0;
++        --it;
++        if (sector >= it->first + it->count) return 0;
++        if (!it->file) {
++            it->file = std::fopen(it->path.c_str(), "rb");
++            if (!it->file) return 0;
++        }
++        const std::uint64_t in = static_cast<std::uint64_t>(sector - it->first) * kSector;
++        if (in >= it->size) {
++            std::memset(out, 0, bytes);  // past the file: the disc's padding is zeros
++            return bytes;
++        }
++        const std::size_t want = static_cast<std::size_t>(std::min<std::uint64_t>(bytes, it->size - in));
++#if defined(_WIN32)
++        if (_fseeki64(it->file, static_cast<long long>(in), SEEK_SET) != 0) return 0;
++#else
++        if (fseeko(it->file, static_cast<off_t>(in), SEEK_SET) != 0) return 0;
++#endif
++        const std::size_t got = std::fread(out, 1, want, it->file);
++        if (got < bytes) std::memset(static_cast<std::uint8_t *>(out) + got, 0, bytes - got);
++        return bytes;  // a read never comes back short: the tail of a file is zeros, as on the disc
++    };
++    g_probe = {};
++    std::fprintf(stderr, "[disc] folder %s: %zu files, %llu sectors (%zu empty files skipped)\n", dir.c_str(), g_folder.size(),
++                 static_cast<unsigned long long>(g_size / kSector), skipped);
++    return true;
++}
++
++}  // namespace
++
+ bool open(const std::string &path) {
++    {
++        std::error_code dir_error;
++        if (std::filesystem::is_directory(std::filesystem::u8path(path), dir_error) && !dir_error) return open_folder(path);
++    }
++    close_folder();
+     std::FILE *file = os::open(path, "rb");
+     if (!file) return false;
+ #if defined(_WIN32)
 diff --git a/scripts/port.sh b/scripts/port.sh
-index e68a5ae..a7b426e 100755
+index e68a5ae..94637ff 100755
 --- a/scripts/port.sh
 +++ b/scripts/port.sh
 @@ -127,6 +127,16 @@ case "$program" in
      exit 1 ;;
  esac
  "${py[@]}" -I "$here/disc.py" extract "$iso" "$game/disc" "$program" > /dev/null
-+if [ "$program" = "SLES_537.68" ]; then
++if [ "$program" = "SLES_537.68" ] || [ "$program" = "SLPM_660.33" ]; then
 +  # window the game rewrites at run time (0x100000, 0xA1B40 bytes): the ELF
 +  # marks the area as BSS without contents, so it must be given file size 0.
 +  window_patch=${PS2_ELF_WINDOW_PATCH:-$here/../../../scripts/patch-elf-window.py}

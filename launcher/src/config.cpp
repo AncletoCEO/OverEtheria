@@ -83,6 +83,8 @@ Bindings default_bindings() {
 bool load_config(Config &c) {
     c = Config{};
     c.memcard = default_memcard();
+    c.assets = default_assets();
+    c.serial = "SLES_537.68";
     std::ifstream in(config_path());
     if (!in) return false;
     std::string line;
@@ -101,6 +103,8 @@ bool load_config(Config &c) {
         if (key == "iso") c.iso = value;
         else if (key == "game") c.game = value;
         else if (key == "memcard") c.memcard = value;
+        else if (key == "assets") c.assets = value;
+        else if (key == "serial") c.serial = value;
         else if (key == "scale") c.scale = std::clamp(std::atoi(value.c_str()), 1, 3);
         else if (key == "fullscreen") c.fullscreen = value == "1" || lower(value) == "true";
         else if (key == "widescreen") c.widescreen = value == "1" || lower(value) == "true";
@@ -123,6 +127,8 @@ bool save_config(const Config &c) {
     out << "iso = " << c.iso << "\n";
     out << "game = " << c.game << "\n";
     out << "memcard = " << c.memcard << "\n";
+    out << "assets = " << c.assets << "\n";
+    out << "serial = " << c.serial << "\n";
     out << "scale = " << c.scale << "\n";
     out << "fullscreen = " << (c.fullscreen ? 1 : 0) << "\n";
     out << "widescreen = " << (c.widescreen ? 1 : 0) << "\n";

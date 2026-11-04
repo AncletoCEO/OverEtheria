@@ -118,9 +118,18 @@ std::string data_dir() {
 
 std::string config_path() { return (fs::path(data_dir()) / "launcher.ini").string(); }
 std::string default_memcard() { return (fs::path(data_dir()) / "memcard.ps2").string(); }
+std::string default_assets() { return (fs::path(data_dir()) / "game" / "disc").string(); }
+bool assets_ready(const Config &c) {
+    std::error_code ec;
+    return !c.assets.empty() && fs::exists(fs::path(c.assets) / ".extracted", ec);
+}
 std::string quick_dir() { return (fs::path(data_dir()) / "quick").string(); }
-std::string game_exe(const Config &c) { return (fs::path(c.game) / "build" / "native-sword" / "ps2run.exe").string(); }
-std::string game_elf(const Config &c) { return (fs::path(c.game) / "games" / "sword" / "disc" / "SLES_537.68").string(); }
+std::string game_id(const Config &c) { return c.serial == "SLPM_660.33" ? "oz" : "sword"; }
+std::string elf_name(const Config &c) { return c.serial == "SLPM_660.33" ? "SLPM_660.33" : "SLES_537.68"; }
+std::string game_exe(const Config &c) { return (fs::path(c.game) / "build" / ("native-" + game_id(c)) / "ps2run.exe").string(); }
+std::string game_elf(const Config &c) {
+    return (fs::path(c.game) / "games" / game_id(c) / "disc" / elf_name(c)).string();
+}
 
 void apply_environment(const Config &c) {
 #ifdef _WIN32
@@ -181,12 +190,13 @@ IsoCheck check_iso(const std::string &path) {
                 check.message = "No se puede leer SYSTEM.CNF del ISO.";
                 return check;
             }
-            if (cnf.find("SLES_537.68") != std::string::npos) {
+            if (cnf.find("SLES_537.68") != std::string::npos || cnf.find("SLPM_660.33") != std::string::npos) {
                 check.ok = true;
-                check.serial = "SLES_537.68";
-                check.message = "Sword of Etheria (PAL) reconocido.";
+                check.serial = cnf.find("SLPM_660.33") != std::string::npos ? "SLPM_660.33" : "SLES_537.68";
+                check.message = check.serial == "SLPM_660.33" ? "Oz / The Sword of Etheria (Japón) reconocido."
+                                                             : "Sword of Etheria (PAL) reconocido.";
             } else {
-                check.message = "El ISO es de otro juego (SYSTEM.CNF no nombra SLES_537.68).";
+                check.message = "El ISO es de otro juego (SYSTEM.CNF no nombra SLES_537.68 ni SLPM_660.33).";
             }
             return check;
         }
@@ -208,7 +218,8 @@ bool prepare_game(const Config &c, const std::string &log_path) {
     if (!fs::exists(script)) return false;
     // The script writes its own log (the launcher only reads it): a GUI parent has no console to pass on.
     const std::string inner = "-NoProfile -ExecutionPolicy Bypass -File \"" + script.string() + "\" -Iso \"" + c.iso +
-                              "\" -Game \"" + c.game + "\" -Log \"" + log_path + "\"";
+                              "\" -Game \"" + c.game + "\" -GameId \"" + game_id(c) + "\" -Data \"" + data_dir() +
+                              "\" -Log \"" + log_path + "\"";
     const std::wstring cmd = L"powershell " + wide(inner);
     STARTUPINFOW si{};
     si.cb = sizeof si;
@@ -256,9 +267,10 @@ bool spawn_game(const Config &c, std::string &error) {
         return false;
     }
     apply_environment(c);
+    const std::string disc = assets_ready(c) ? c.assets : c.iso;
     std::vector<std::string> args = {
         game_exe(c), game_elf(c),
-        "--disc", c.iso,
+        "--disc", disc,
         "--memcard", c.memcard,
         "--quick-dir", quick_dir(),
         c.fullscreen ? "--fullscreen" : "--window",

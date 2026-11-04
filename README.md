@@ -42,7 +42,8 @@ Medición completa y parches: [`docs/analysis/07-runtime-nativo.md`](docs/analys
 ### Requisitos
 
 - Windows o Linux, Git, 7-Zip o `bsdtar`.
-- Tu copia PAL del juego (`SLES_537.68`, MD5 `b9c5115b77b7f05fbf14a67df8d3f99d`).
+- Tu copia del juego: PAL (`SLES_537.68`) o japonesa (`SLPM_660.33`).
+  El parche *undub* PAL funciona porque usa el mismo ejecutable.
 - El toolchain portable en `tools/` (ignorado): llvm-mingw UCRT, Ninja, CMake, Python.
 
 ### Pasos

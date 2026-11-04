@@ -3,6 +3,10 @@
 
 Uso: patch-elf-window.py <elf> <vaddr> <memsz>
 
+Si el ELF no tiene un PT_LOAD en <vaddr> pero sí una entrada ejecutable vacía
+(filesz=0, memsz=0, address=0), la reutiliza para la ventana: es el caso del ELF
+japonés, cuyos overlays también se cargan en 0x100000.
+
 Lo usa el port de ps2-native-recomp para que un overlay cargado en runtime
 (p. ej. menu.bin en 0x100000) se trate como ventana capturable.
 """
@@ -37,4 +41,18 @@ for i in range(phnum):
         print(f"patched PT_LOAD 0x{vaddr:x}: filesz=0 memsz=0x{memsz:x}")
         sys.exit(0)
 
-sys.exit(f"no hay PT_LOAD en 0x{vaddr:x}")
+# No PT_LOAD at that address: an executable entry with no contents is a free slot (the
+# Japanese ELF has one at address 0). Its program header becomes the window.
+for i in range(phnum):
+    off = phoff + i * phentsize
+    p_type, _, p_vaddr, _, p_filesz, p_memsz, p_flags, _ = struct.unpack_from("<8I", data, off)
+    if p_type == 1 and p_filesz == 0 and p_memsz == 0 and p_vaddr == 0 and (p_flags & 1):
+        struct.pack_into("<I", data, off + 8, vaddr)   # p_vaddr
+        struct.pack_into("<I", data, off + 12, vaddr)  # p_paddr
+        struct.pack_into("<I", data, off + 16, 0)      # p_filesz
+        struct.pack_into("<I", data, off + 20, memsz)  # p_memsz
+        open(path, "wb").write(data)
+        print(f"added PT_LOAD 0x{vaddr:x} in an empty entry: filesz=0 memsz=0x{memsz:x}")
+        sys.exit(0)
+
+sys.exit(f"no hay PT_LOAD en 0x{vaddr:x} ni una entrada vacía para reutilizar")
