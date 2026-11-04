@@ -65,6 +65,7 @@ Rama `visual/advance-display-and-main-loop`, 2026-11-03:
 | Diálogo de memory card | texto del juego, cursor y opciones Yes/No |
 | Menú principal | `THE SWORD OF ETHERIA — Story Mode / Start New`, ~50 fps |
 | Cutscene inicial | escena 3D, retrato y diálogo, ~33 fps (compilando VU en vivo) |
+| Diálogo con varios personajes | el texto avanza con cruz y cambia de retrato, ~36 fps |
 
 El log de la corrida muestra `[ee-live] switched in the library of window
 0x00100000` y `[vu-live] N new vector programs compiled`, es decir el runtime
@@ -84,7 +85,19 @@ $presses = @(
 ```
 
 La ventana se captura con `PrintWindow` (`scripts/capture-window.ps1`) porque el
-`play.py` del tool necesita Pillow, que el Python embebido no trae.
+`play.py` del tool necesita Pillow, que el Python embebido no trae. Si la política de
+ejecución bloquea el script:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\capture-window.ps1 -Out work\shot.png
+```
+
+### Input medido
+
+- `cross` avanza el diálogo; mantenerlo pulsado acelera la cutscene.
+- `start` sostenido (**Skip**) corta la cutscene y vuelve al menú principal.
+- El diálogo se dibuja con retratos intercambiables y texto con efecto de máquina de
+  escribir; no hubo `missing code` en ninguna de las corridas.
 
 ## Pendiente
 
