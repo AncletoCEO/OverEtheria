@@ -66,6 +66,10 @@ if (-not (Test-Path $bash)) { Say 'no se encontró Git Bash (lo necesita el pipe
 $python = Join-Path $repo 'tools\python\python.exe'
 if (-not (Test-Path $python)) { $python = 'python' }
 
+# La ventana de 0x100000 la crea este script: se lo decimos a port.sh (el clon del
+# runtime puede vivir en cualquier carpeta, asi que la ruta relativa no alcanza).
+$env:PS2_ELF_WINDOW_PATCH = Join-Path $repo 'scripts\patch-elf-window.py'
+
 $game_posix = $Game -replace '\\', '/'
 $iso_posix = $Iso -replace '\\', '/'
 $repo_posix = $repo -replace '\\', '/'

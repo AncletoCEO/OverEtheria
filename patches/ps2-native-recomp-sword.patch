@@ -237,21 +237,28 @@ index 340aba7..d4b2954 100644
      if (!file) return false;
  #if defined(_WIN32)
 diff --git a/scripts/port.sh b/scripts/port.sh
-index e68a5ae..94637ff 100755
+index e68a5ae..e56f7df 100755
 --- a/scripts/port.sh
 +++ b/scripts/port.sh
-@@ -127,6 +127,16 @@ case "$program" in
+@@ -127,6 +127,23 @@ case "$program" in
      exit 1 ;;
  esac
  "${py[@]}" -I "$here/disc.py" extract "$iso" "$game/disc" "$program" > /dev/null
 +if [ "$program" = "SLES_537.68" ] || [ "$program" = "SLPM_660.33" ]; then
 +  # window the game rewrites at run time (0x100000, 0xA1B40 bytes): the ELF
 +  # marks the area as BSS without contents, so it must be given file size 0.
-+  window_patch=${PS2_ELF_WINDOW_PATCH:-$here/../../../scripts/patch-elf-window.py}
-+  if [ -f "$window_patch" ]; then
++  # The launcher passes PS2_ELF_WINDOW_PATCH; without it, look next to the clone
++  # (the runtime may live anywhere, so a fixed relative path is not enough).
++  window_patch=${PS2_ELF_WINDOW_PATCH:-}
++  if [ -z "$window_patch" ]; then
++    for candidate in "$here/../../../scripts/patch-elf-window.py" "$ROOT/../scripts/patch-elf-window.py"; do
++      if [ -f "$candidate" ]; then window_patch=$candidate; break; fi
++    done
++  fi
++  if [ -n "$window_patch" ] && [ -f "$window_patch" ]; then
 +    "${py[@]}" -I "$window_patch" "$game/disc/$program" 0x100000 0xA1B40 || true
 +  else
-+    echo "warning: no $window_patch: 0x100000 stays without a code window" >&2
++    echo "warning: no patch-elf-window.py (set PS2_ELF_WINDOW_PATCH): 0x100000 stays without a code window" >&2
 +  fi
 +fi
  echo "boots $boot"

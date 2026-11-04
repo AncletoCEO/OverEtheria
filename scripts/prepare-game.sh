@@ -37,6 +37,10 @@ exec > >(tee -a "$log") 2>&1
 
 say() { echo "[prepare] $*"; }
 
+# La ventana de 0x100000 la crea este repo: se lo decimos a port.sh (el clon del
+# runtime puede vivir en cualquier carpeta, así que la ruta relativa no alcanza).
+export PS2_ELF_WINDOW_PATCH="$repo/scripts/patch-elf-window.py"
+
 if [ ! -f "$game/scripts/port.sh" ]; then
     say "clonando ps2-native-recomp en $game"
     mkdir -p "$(dirname "$game")"
