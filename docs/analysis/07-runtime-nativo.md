@@ -103,7 +103,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\capture-window.ps1 -
 
 ### Input medido
 
-- `cross` avanza el diálogo; mantenerlo pulsado acelera la cutscene.
+- `cross` avanza el diálogo. **Mantenerlo pulsado sólo acelera el texto**: para pasar
+  de línea hacen falta pulsaciones cortas y repetidas (~cada 2 s).
 - `start` sostenido (**Skip**) corta la cutscene y vuelve al menú principal.
 - El diálogo se dibuja con retratos intercambiables y texto con efecto de máquina de
   escribir; no hubo `missing code` en ninguna de las corridas.
