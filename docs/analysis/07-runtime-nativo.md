@@ -110,6 +110,24 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\capture-window.ps1 -
 - El diálogo se dibuja con retratos intercambiables y texto con efecto de máquina de
   escribir; no hubo `missing code` en ninguna de las corridas.
 
+## Receta para el próximo overlay
+
+`OL.BIN` carga módulos en `0x100000` y `0x154000`, ambas dentro de la ventana
+`0x100000..0x1A1B40` que declara el ELF. Para registrar la primera misión:
+
+1. correr el juego hasta que cargue el overlay de misión con
+   `PS2_DUMP=... explore_ram.bin` (o `--misses`) y localizar su base;
+2. guardar la imagen de RAM desde esa base como
+   `games/sword/overlays/<base>_<crc>.bin` (la cabecera `MWo3` ya trae su rango de
+   texto);
+3. si el juego se detiene con `missing code`, agregar la dirección a
+   `entries.txt` (o sembrar el texto con `scripts/make-overlay-entries.py`);
+4. reconstruir con `port.sh ... --no-explore` y repetir.
+
+El límite conocido es `windows.py`/`ee_live`: captura 16 KiB por ventana y corta en
+`0x40000`; un overlay de misión más grande que eso hay que cargarlo a mano como en el
+paso 2.
+
 ## Pendiente
 
 - Reportar al upstream los parches 1–4 (son genéricos: ventana sin `PT_LOAD`,
