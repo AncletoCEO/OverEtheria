@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=OverEtheria
+Comment=Sword of Etheria recompilado (necesita tu ISO)
+Exec=overetheria-launcher
+Icon=overetheria
+Terminal=false
+Categories=Game;

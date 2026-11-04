@@ -22,6 +22,13 @@ $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 if (-not $Game) { $Game = Join-Path $PSScriptRoot '..\tools\ps2-native-recomp' }
 if (-not $Data) { $Data = Join-Path $repo 'work\game' }
+# Sin runtime clonado (paquete nuevo) se clona solo; después los parches lo ajustan.
+if (-not (Test-Path (Join-Path $Game 'scripts\port.sh'))) {
+    Say "clonando ps2-native-recomp en $Game"
+    New-Item -ItemType Directory -Force (Split-Path -Parent $Game) | Out-Null
+    & git clone --depth 1 https://github.com/exoteric33/ps2-native-recomp $Game
+    if ($LASTEXITCODE -ne 0) { Say 'no se pudo clonar ps2-native-recomp (¿git y red?)'; exit 1 }
+}
 $Game = (Resolve-Path $Game).Path
 $Iso = (Resolve-Path $Iso).Path
 if (-not $Log) { $Log = Join-Path $repo 'work\prepare.log' }

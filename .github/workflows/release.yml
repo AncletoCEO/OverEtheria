@@ -1,0 +1,90 @@
+name: release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: windows package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S launcher -B build/launcher -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build/launcher --config Release
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { 'dev' }
+          ./scripts/package-windows.ps1 -Build build/launcher -Out dist -Version $version
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/*.zip
+          if-no-files-found: error
+
+  linux:
+    name: linux AppImage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libsdl2-dev ninja-build pkg-config file wget desktop-file-utils
+
+      - name: Configure
+        run: cmake -S launcher -B build/launcher -G Ninja -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build/launcher
+
+      - name: Package
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if [ "$GITHUB_REF_TYPE" != "tag" ]; then version=dev; fi
+          bash scripts/package-linux.sh build/launcher dist "$version"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: dist/*.AppImage
+          if-no-files-found: error
+
+  publish:
+    name: GitHub release
+    needs: [windows, linux]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            **OverEtheria** — recompilación nativa de *Sword of Etheria*.
+
+            Este paquete no contiene contenido del juego. Necesitás tu propia copia
+            (PAL `SLES_537.68`, undub o japonesa `SLPM_660.33`) y el toolchain para
+            prepararla desde el launcher: el primer arranque pide el ISO, construye el
+            juego en tu equipo y extrae su contenido (después el ISO ya no hace falta).
+
+            - Windows: descomprimí el `.zip` y ejecutá `overetheria-launcher.exe`.
+            - Linux: `chmod +x` al `.AppImage` y ejecutalo (o `--appimage-extract-and-run`
+              si no tenés FUSE).

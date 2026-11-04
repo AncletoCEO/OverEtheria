@@ -60,3 +60,9 @@ evidencia. ✅
 - [ ] Progreso de la preparación línea a línea (hoy se lee el registro).
 - [ ] File browser propio para Linux sin `zenity`.
 - [ ] Empaquetado portable (`data/` junto al ejecutable) y notas de release.
+
+## Cierre (2026-11-03)
+
+- Cerrado con el launcher, la extraccion del contenido y las tres versiones reconocidas.
+- El registro del overlay del menu japones quedo automatizado (scripts/register-overlay.py) y verificado con el attract de Oz.
+- Los items abiertos pasaron a changes nuevos: gameplay-validation (menu/misiones JP, guardado post-tutorial, gameplay) y launcher-polish (progreso linea a linea, file browser Linux, empaquetado).
