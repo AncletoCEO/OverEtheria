@@ -233,8 +233,10 @@ bool prepare_game(const Config &c, const std::string &log_path) {
 #else
     const fs::path script = repo / "scripts" / "prepare-game.sh";
     if (!fs::exists(script)) return false;
-    const std::string cmd = "bash '" + script.string() + "' --iso '" + c.iso + "' --game '" + c.game + "' > '" + log_path +
-                            "' 2>&1 &";
+    // Same arguments as the Windows path: the AppImage mount is read-only, so the data
+    // folder (content, log, cloned runtime) must be the writable one of the user.
+    const std::string cmd = "bash '" + script.string() + "' --iso '" + c.iso + "' --game '" + c.game + "' --game-id '" +
+                            game_id(c) + "' --data '" + data_dir() + "' --log '" + log_path + "' > /dev/null 2>&1 &";
     return std::system(cmd.c_str()) == 0;
 #endif
 }

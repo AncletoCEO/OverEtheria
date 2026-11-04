@@ -94,7 +94,8 @@ std::pair<std::size_t, std::uint64_t> dir_stats(const std::string &dir) {
 }
 
 std::string suggested_game_dir() {
-    // <repo>/tools/ps2-native-recomp when the launcher lives inside the repo.
+    // <repo>/tools/ps2-native-recomp when the launcher lives inside the repo; otherwise a
+    // writable folder in the data directory (the release package ships no runtime).
     fs::path dir = fs::current_path();
     for (int i = 0; i < 5; ++i) {
         const fs::path candidate = dir / "tools" / "ps2-native-recomp";
@@ -102,7 +103,7 @@ std::string suggested_game_dir() {
         if (!dir.has_parent_path() || dir.parent_path() == dir) break;
         dir = dir.parent_path();
     }
-    return (fs::current_path() / "tools" / "ps2-native-recomp").string();
+    return (fs::path(oe::data_dir()) / "runtime" / "ps2-native-recomp").string();
 }
 
 }  // namespace

@@ -21,7 +21,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 if (-not $Game) { $Game = Join-Path $PSScriptRoot '..\tools\ps2-native-recomp' }
-if (-not $Data) { $Data = Join-Path $repo 'work\game' }
+if (-not $Data) { $Data = Join-Path $repo 'work' }
 # Sin runtime clonado (paquete nuevo) se clona solo; después los parches lo ajustan.
 if (-not (Test-Path (Join-Path $Game 'scripts\port.sh'))) {
     Say "clonando ps2-native-recomp en $Game"
@@ -69,7 +69,7 @@ if (-not (Test-Path $python)) { $python = 'python' }
 $game_posix = $Game -replace '\\', '/'
 $iso_posix = $Iso -replace '\\', '/'
 $repo_posix = $repo -replace '\\', '/'
-$disc_dir = Join-Path $Data 'disc'
+$disc_dir = Join-Path $Data 'game\disc'
 $disc_posix = ($disc_dir -replace '\\', '/')
 
 # 1. parches propios sobre el runtime
