@@ -254,11 +254,12 @@ int main(int argc, char **argv) {
             running = false;
             oe::wait_game();
         }
-        if (preparing && (!oe::prepare_running() || oe::game_built(config))) {
+        if (preparing && !oe::prepare_running()) {
             preparing = false;
-            oe::prepare_wait();
-            prepare_message = oe::game_built(config) ? "Juego construido. Ya podés jugar."
-                                                     : "La preparación falló: mirá el registro de abajo.";
+            const int code = oe::prepare_wait();
+            prepare_message = (code == 0 && oe::game_built(config))
+                                  ? "Juego construido. Ya podés jugar."
+                                  : "La preparación falló (código " + std::to_string(code) + "): mirá el registro de abajo.";
         }
 
         ImGui_ImplSDLRenderer2_NewFrame();

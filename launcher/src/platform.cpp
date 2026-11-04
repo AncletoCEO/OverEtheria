@@ -96,6 +96,9 @@ std::ifstream open_file(const std::string &path) { return std::ifstream(path, st
 
 #ifndef _WIN32
 pid_t g_game_pid = -1;
+pid_t g_prepare_pid = -1;
+bool g_prepare_done = false;
+int g_prepare_status = 0;
 #endif
 
 }  // namespace
@@ -235,9 +238,20 @@ bool prepare_game(const Config &c, const std::string &log_path) {
     if (!fs::exists(script)) return false;
     // Same arguments as the Windows path: the AppImage mount is read-only, so the data
     // folder (content, log, cloned runtime) must be the writable one of the user.
-    const std::string cmd = "bash '" + script.string() + "' --iso '" + c.iso + "' --game '" + c.game + "' --game-id '" +
-                            game_id(c) + "' --data '" + data_dir() + "' --log '" + log_path + "' > /dev/null 2>&1 &";
-    return std::system(cmd.c_str()) == 0;
+    std::vector<std::string> args = {"bash", script.string(), "--iso", c.iso, "--game", c.game,
+                                     "--game-id", game_id(c), "--data", data_dir(), "--log", log_path};
+    std::vector<char *> argv;
+    for (auto &a : args) argv.push_back(a.data());
+    argv.push_back(nullptr);
+    const pid_t pid = fork();
+    if (pid == 0) {
+        execvp(argv[0], argv.data());
+        _exit(127);
+    }
+    if (pid < 0) return false;
+    g_prepare_pid = pid;
+    g_prepare_done = false;
+    return true;
 #endif
 }
 
@@ -245,6 +259,15 @@ bool prepare_running() {
 #ifdef _WIN32
     return g_prepare.hProcess && WaitForSingleObject(g_prepare.hProcess, 0) == WAIT_TIMEOUT;
 #else
+    if (g_prepare_done || g_prepare_pid < 0) return false;
+    int status = 0;
+    const pid_t got = waitpid(g_prepare_pid, &status, WNOHANG);
+    if (got == 0) return true;
+    if (got == g_prepare_pid) {
+        g_prepare_status = status;
+        g_prepare_done = true;
+        g_prepare_pid = -1;
+    }
     return false;
 #endif
 }
@@ -259,7 +282,18 @@ int prepare_wait() {
     g_prepare.hProcess = nullptr;
     return static_cast<int>(code);
 #else
-    return 0;
+    if (!g_prepare_done && g_prepare_pid > 0) {
+        int status = 0;
+        if (waitpid(g_prepare_pid, &status, 0) == g_prepare_pid) {
+            g_prepare_status = status;
+            g_prepare_done = true;
+        }
+        g_prepare_pid = -1;
+    }
+    if (!g_prepare_done) return -1;
+    if (WIFEXITED(g_prepare_status)) return WEXITSTATUS(g_prepare_status);
+    if (WIFSIGNALED(g_prepare_status)) return 128 + WTERMSIG(g_prepare_status);
+    return 1;
 #endif
 }
 
