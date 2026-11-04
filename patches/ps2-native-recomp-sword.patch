@@ -1,0 +1,122 @@
+diff --git a/recomp/elf.cpp b/recomp/elf.cpp
+index ffa234b..c617cef 100644
+--- a/recomp/elf.cpp
++++ b/recomp/elf.cpp
+@@ -74,10 +74,15 @@ Image Image::load(const std::string &path) {
+     return image;
+ }
+ 
+-Image Image::raw(std::uint32_t address, std::vector<std::uint8_t> bytes, std::pair<std::uint32_t, std::uint32_t> text) {
++Image Image::raw(std::uint32_t address, std::vector<std::uint8_t> bytes, std::pair<std::uint32_t, std::uint32_t> text,
++                 std::uint32_t executable_size) {
+     Image image;
+     const auto initialized_size = static_cast<std::uint32_t>(bytes.size());
+-    image.segments_.push_back(Segment{address, std::move(bytes), true, initialized_size});
++    // A fixed-address image (an overlay with a header) can carry data after its
++    // text: the words are readable (pointer tables name functions) but only
++    // the text is executable, so the analysis stops at its end.
++    image.segments_.push_back(Segment{address, std::move(bytes), true,
++                                     executable_size == UINT32_MAX ? initialized_size : std::min(executable_size, initialized_size)});
+     image.text_ = text;
+     return image;
+ }
+diff --git a/recomp/elf.hpp b/recomp/elf.hpp
+index c18e342..19e6334 100644
+--- a/recomp/elf.hpp
++++ b/recomp/elf.hpp
+@@ -19,7 +19,8 @@ struct Segment {
+ class Image {
+ public:
+     static Image load(const std::string &path);
+-    static Image raw(std::uint32_t address, std::vector<std::uint8_t> bytes, std::pair<std::uint32_t, std::uint32_t> text);
++    static Image raw(std::uint32_t address, std::vector<std::uint8_t> bytes, std::pair<std::uint32_t, std::uint32_t> text,
++                     std::uint32_t executable_size = UINT32_MAX);
+ 
+     std::uint32_t entry() const { return entry_; }
+     const std::vector<Segment> &segments() const { return segments_; }
+diff --git a/recomp/main.cpp b/recomp/main.cpp
+index e7ebcb1..034d5b1 100644
+--- a/recomp/main.cpp
++++ b/recomp/main.cpp
+@@ -45,6 +45,18 @@ std::uint32_t word_at(const Snr2Module &m, std::uint32_t at) {
+     return value;
+ }
+ 
++// Functions of a fixed-address image that neither a call nor a pointer names: the game
++// reaches them through a table it builds at run time, and a function begins with its
++// stack frame. The game then runs them instead of stopping for missing code.
++std::vector<std::uint32_t> prologue_starts(const Snr2Module &m) {
++    std::vector<std::uint32_t> starts;
++    for (std::uint32_t at = m.code_begin; at + 4 <= m.code_end; at += 4) {
++        const std::uint32_t w = word_at(m, at);
++        if ((w & 0xFFFF8000u) == 0x27BD8000u || (w & 0xFFFF8000u) == 0x67BD8000u) starts.push_back(m.base + at);
++    }
++    return starts;
++}
++
+ std::vector<std::pair<std::uint32_t, std::uint32_t>> checks_for(const Snr2Module &m, const Program &program) {
+     std::vector<std::uint32_t> words;
+     for (std::uint32_t pc = m.code_begin; pc + 4 <= m.code_end; pc += 4)
+@@ -98,6 +110,20 @@ std::vector<Snr2Module> read_overlays(const std::string &dir) {
+         o.base = static_cast<std::uint32_t>(std::stoul(base, nullptr, 16));
+         o.code_begin = 0;
+         o.code_end = o.size;
++        // An image with an "MWo3" header says where its text begins and ends:
++        // 0x40 bytes of header, then the text, then the data. The whole file
++        // sits at `base` (the game loads it verbatim), so the text range keeps
++        // the analysis from treating the data and its pointer tables as code
++        // while still reading those pointers as function starts.
++        if (o.bytes.size() >= 0x40 && std::memcmp(o.bytes.data(), "MWo3", 4) == 0) {
++            std::uint32_t header_base = 0, text = 0;
++            std::memcpy(&header_base, o.bytes.data() + 8, 4);
++            std::memcpy(&text, o.bytes.data() + 0x0C, 4);
++            if (header_base == o.base && text && 0x40u + text <= o.size) {
++                o.code_begin = 0x40;
++                o.code_end = 0x40 + text;
++            }
++        }
+         o.name = stem;
+         if (std::any_of(overlays.begin(), overlays.end(), [&](const Snr2Module &m) { return m.base == o.base && m.bytes == o.bytes; })) continue;
+         overlays.push_back(std::move(o));
+@@ -275,9 +301,11 @@ int main(int argc, char **argv) {
+                 for (const std::uint32_t entry : it->second) window_tokens[o.base].insert(entry);
+         }
+         for (const Snr2Module &o : overlays) {
+-            Image candidate = Image::raw(o.base, o.bytes, {0, o.size});
++            Image candidate = Image::raw(o.base, o.bytes, {o.base + o.code_begin, o.base + o.code_end}, o.code_end);
+             std::vector<std::uint32_t> seeds = window_seeds[o.base];
+             for (const std::uint32_t entry : window_tokens[o.base]) seeds.push_back(o.base + entry);
++            const std::vector<std::uint32_t> prologues = prologue_starts(o);
++            seeds.insert(seeds.end(), prologues.begin(), prologues.end());
+             const Program signature_program = analyse(candidate, seeds, {});
+             std::vector<std::pair<std::uint32_t, std::uint32_t>> signature;
+             for (std::uint32_t at = 0; at + 4 <= o.size; at += 4)
+@@ -299,11 +327,13 @@ int main(int argc, char **argv) {
+         }
+         for (const Snr2Module &o : overlays) {
+             if (!representatives.count(o.name)) continue;
+-            images.push_back(Image::raw(o.base, o.bytes, {0, o.size}));
++            images.push_back(Image::raw(o.base, o.bytes, {o.base + o.code_begin, o.base + o.code_end}, o.code_end));
+             std::vector<std::uint32_t> seeds = window_seeds[o.base];
+             // Entry tokens name module positions, and unlike a relocatable
+             // module this image occupies a real address.
+             for (const std::uint32_t entry : window_offsets[o.name]) seeds.push_back(o.base + entry);
++            const std::vector<std::uint32_t> prologues = prologue_starts(o);
++            seeds.insert(seeds.end(), prologues.begin(), prologues.end());
+             programs.push_back(analyse(images.back(), seeds, {}));
+             overlay_code += code_size(programs.back());
+             translations.push_back({&images.back(), &programs.back(), nullptr, "m_" + o.name + "_", false, o.name, o.size,
+diff --git a/scripts/port.sh b/scripts/port.sh
+index e68a5ae..058401e 100755
+--- a/scripts/port.sh
++++ b/scripts/port.sh
+@@ -127,6 +127,9 @@ case "$program" in
+     exit 1 ;;
+ esac
+ "${py[@]}" -I "$here/disc.py" extract "$iso" "$game/disc" "$program" > /dev/null
++if [ "$program" = "SLES_537.68" ]; then
++  "${py[@]}" -I "C:/repos/etheria/scripts/patch-elf-window.py" "$game/disc/$program" 0x100000 0xA1B40 || true
++fi
+ echo "boots $boot"
+ crc=$("${py[@]}" -I "$here/pnach.py" crc "$game/disc/$program")
+ echo "PCSX2 patch files for it end in _$crc.pnach"
