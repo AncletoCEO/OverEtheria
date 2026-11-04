@@ -168,4 +168,51 @@ backend portable → consola. Cada hito tiene un gate medible.
   y los scripts sin permisos. Riesgo: no es el path documentado (MSVC/Linux) y puede
   requerir ajustes de CMake/FFmpeg; WSL2/MSVC quedan como fallback.
 - **Refs**: `docs/analysis/05-entorno.md`, `tools.lock.toml`.
-- **Estado**: aceptada (2026-11-03, durante implementación).
+- **Estado**: aceptada (2026-11-03, durante implementación). Reemplazada en la
+  Revisión 2 por llvm-mingw UCRT.
+
+## Revisión 2 — cambio de herramienta (2026-11-03)
+
+La Fase 0 se completó con PS2Recomp, pero el juego seguía sin imagen después de un mes
+de trabajo. Se reemplaza la base del runtime por **`ps2-native-recomp`** (MIT) y se
+mantiene PS2Recomp sólo como evidencia histórica (`recomp/baseline.md`).
+
+### recomp-native-path (reemplaza la decisión anterior)
+
+- **memory_key**: `recomp-native-path`
+- **Elección**: llegar al juego nativo con **`ps2-native-recomp`**, que traduce el
+  código que descubre en runtime, captura overlays y compila VU1 al vuelo.
+- **Descartado**: seguir con PS2Recomp (sin soporte de overlays y sin imagen tras un
+  mes) y el matching decompilation.
+- **Justificación**: medido el 2026-11-03: con `ps2-native-recomp` el juego muestra el
+  menú de video, el diálogo de memory card, el menú principal y la cutscene inicial en
+  la primera sesión. Ver `docs/analysis/07-runtime-nativo.md`.
+- **Estado**: aceptada (2026-11-03).
+
+### overlay-registration
+
+- **memory_key**: `overlay-registration`
+- **Elección**: registrar los overlays como **ventanas de código** del ELF
+  (`PT_LOAD` sintético sin contenido) más una imagen por contenido, con la cabecera
+  `MWo3` indicando el rango de texto.
+- **Descartado**: parchear el binario del juego o asumir que todo el overlay es código.
+- **Justificación**: `menu.bin` se carga *verbatim* en `0x100000`; si la imagen no
+  incluye la cabecera, sus checks no coinciden con RAM y el módulo nunca entra en
+  juego. Incluir la data sin marcar el rango de texto produce entradas falsas
+  (`no entry for 0016F37C`).
+- **Refs**: `docs/analysis/07-runtime-nativo.md`,
+  `patches/ps2-native-recomp-sword.patch`.
+- **Estado**: aceptada (2026-11-03).
+
+### runtime-discovery-fallback
+
+- **memory_key**: `runtime-discovery-fallback`
+- **Elección**: cuando una función sólo se conoce por tablas construidas en runtime,
+  sembrarla por su **prólogo** (`addiu sp,sp,-N`) y, si hace falta, sembrar todo el
+  rango de texto del overlay.
+- **Descartado**: iterar una dirección por corrida (minutos por función).
+- **Justificación**: el menú del juego llama funciones cortas sin prólogo ni puntero
+  estático (`0x1518A0`, `0x1518B0`); la lista completa de entradas del menú permite
+  que el juego pase el menú y llegue a la cutscene sin `missing code`.
+- **Refs**: `scripts/make-overlay-entries.py`.
+- **Estado**: aceptada (2026-11-03, workaround local; candidato a upstream).

@@ -24,27 +24,52 @@ ocultos.
 
 ### Requirement: Soporte de overlays `MWo`
 
-El sistema SHALL cargar los módulos `MWo` de `OL.BIN` en su dirección de carga,
-registrar sus funciones recompiladas y ejecutar sus inicializadores estáticos.
+El sistema SHALL registrar los módulos `MWo` de `OL.BIN` en su dirección de carga y
+servir su código traducido cuando el juego salta a él, incluidos sus inicializadores
+estáticos.
 
-#### Scenario: Carga de un módulo
+#### Scenario: Registro de una ventana de código
 
-- **WHEN** el juego pide cargar `mission22.bin` o `menu.bin`
-- **THEN** el runtime copia text y data, limpia bss, ejecuta `_static_init` y deja
-  el módulo ejecutable en `0x154000` o `0x100000`
+- **WHEN** el ELF no declara una ventana en la dirección donde el juego carga
+  `menu.bin` (`0x100000`)
+- **THEN** el pipeline la crea como `PT_LOAD` sin contenido y registra una imagen del
+  overlay en esa base
 
-#### Scenario: Dispatch entre main y overlay
+#### Scenario: Imagen que coincide con RAM
 
-- **WHEN** el código de `main` llama a una dirección del overlay (o el overlay llama
-  a `main`)
-- **THEN** la llamada resuelve a la función recompilada del módulo activo y no a una
-  dirección sin registrar
+- **WHEN** el juego carga un overlay *verbatim* en su base
+- **THEN** la imagen registrada incluye la cabecera `MWo3` y coincide palabra a palabra
+  con la RAM, de modo que las comprobaciones de contenido del runtime pasan
+
+#### Scenario: Rango de texto desde la cabecera
+
+- **WHEN** la imagen de overlay trae texto y data
+- **THEN** el traductor analiza como código sólo el rango de texto que declara la
+  cabecera y usa la data como tabla de punteros
+
+#### Scenario: Función que sólo conoce una tabla de runtime
+
+- **WHEN** el juego llama a una función corta que no aparece en ninguna palabra ni en
+  ningún `jal`
+- **THEN** la entrada se siembra por su prólogo o por el rango de texto del overlay y
+  el juego no se detiene con `missing code`
 
 #### Scenario: Dos módulos con la misma base
 
 - **WHEN** se carga `menu.bin` después de `prg_player_0.bin` (ambos en `0x100000`)
-- **THEN** el overlay bank reemplaza la tabla del módulo anterior y no quedan
-  entradas obsoletas
+- **THEN** el runtime usa la imagen cuyo contenido coincide con RAM y descarta la
+  anterior
+
+### Requirement: Traducción en runtime
+
+El sistema SHALL traducir y compilar el código y los programas VU1 que descubre
+mientras el juego corre, sin detenerlo cuando falte una dirección.
+
+#### Scenario: Ventana descubierta en juego
+
+- **WHEN** el juego ejecuta una ventana de código que el build no tradujo
+- **THEN** el runtime la traduce en vivo, la enlaza y sigue, y deja la imagen y las
+  entradas en el directorio del juego para el siguiente build
 
 ### Requirement: Menú visible
 
