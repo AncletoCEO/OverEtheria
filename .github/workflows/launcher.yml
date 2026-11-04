@@ -39,7 +39,8 @@ jobs:
         run: |
           $exe = "build/launcher/bin/Release/overetheria-launcher.exe"
           if (-not (Test-Path $exe)) { $exe = "build/launcher/bin/overetheria-launcher.exe" }
-          $p = Start-Process -FilePath $exe -ArgumentList '--version' -Wait -PassThru -NoNewWindow
+          $dir = Split-Path -Parent (Resolve-Path $exe)
+          $p = Start-Process -FilePath $exe -ArgumentList '--version' -WorkingDirectory $dir -Wait -PassThru -NoNewWindow
           if ($p.ExitCode -ne 0) { throw "launcher --version devolvió $($p.ExitCode)" }
 
   no-game-content:
