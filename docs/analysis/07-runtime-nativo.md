@@ -69,6 +69,10 @@ Rama `visual/advance-display-and-main-loop`, 2026-11-03:
 | Diálogo con varios personajes | el texto avanza con cruz y cambia de retrato, ~36 fps |
 | Diálogo a dos voces | dos retratos simultáneos (Almira y Cain) con caja superior e inferior, ~39 fps |
 | Gameplay (inicio de misión) | escena 3D de combate con tutorial `Tap ⬜ for combo attack`, ~48 fps |
+| 60 Hz (NTSC) | `SetGsCrt mode 0x2` y 60.0 fps en la ventana |
+| 50 Hz (PAL) | `SetGsCrt mode 0x3` y ~50 fps |
+| Idiomas | English, Français, Deutsch, Italiano y Español renderizan su texto y acentos |
+| Memory card | el runtime emula la tarjeta de 8 MB (`--memcard`); el juego la detecta y ofrece `Load Game` |
 
 El log de la corrida muestra `[ee-live] switched in the library of window
 0x00100000` y `[vu-live] N new vector programs compiled`, es decir el runtime
@@ -125,11 +129,56 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\capture-window.ps1 -
 
 ### Input medido
 
+- El menú de video se elige en horizontal: **izquierda = NTSC (60 Hz)**, derecha =
+  PAL (50 Hz); cruz confirma. Después viene el menú de idioma (English, Français,
+  Deutsch, Italiano, Español) y sólo entonces el attract con «PRESS START».
 - `cross` avanza el diálogo. **Mantenerlo pulsado sólo acelera el texto**: para pasar
   de línea hacen falta pulsaciones cortas y repetidas (~cada 2 s).
 - `start` sostenido (**Skip**) corta la cutscene y vuelve al menú principal.
 - El diálogo se dibuja con retratos intercambiables y texto con efecto de máquina de
   escribir; no hubo `missing code` en ninguna de las corridas.
+
+## Memory card
+
+El runtime trae la emulación de tarjeta PS2 en `runtime/src/iop/sio2.cpp`; sólo hay que
+pasar `--memcard <archivo>`. Sin el archivo el juego muestra el warning de «No memory
+card»; con el archivo (aunque falte, se crea al guardar) el warning desaparece, el
+menú principal ofrece `Load Game` y el guardado escribe en esa tarjeta.
+
+Una tarjeta ya formateada se puede crear con el propio tool:
+
+```bash
+python scripts/mcformat.py games/sword/memcard.ps2   # 8 MB formateada
+```
+
+El juego **no permite guardar hasta terminar el tutorial**, que es largo; por eso la
+primera versión da el guardado por funcionando cuando la tarjeta se detecta y `Load
+Game` aparece. Falta el gate manual de guardar y recargar después del tutorial.
+
+## Launcher
+
+`launcher/` es una aplicación propia (MIT, C++20 + SDL2 + ImGui) que prepara y lanza el
+juego sin editar archivos a mano:
+
+```bash
+cmake -S launcher -B build/launcher -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/launcher
+build/launcher/bin/overetheria-launcher
+```
+
+- **Primer arranque**: pide el ISO, lo valida (`SYSTEM.CNF` con `SLES_537.68`) y
+  ejecuta `scripts/prepare-game.ps1` (Windows) o `.sh` (Linux), con registro visible.
+- **Video**: escala interna 1×/2×/3×, pantalla completa, 16:9 y PAL/NTSC.
+- **Controles**: tabla de 26 acciones; «Cambiar» captura la tecla o el botón del mouse
+  y escribe `keys.ini` en la carpeta quick del runtime.
+- **Guardado**: ruta de la memory card, abrir carpeta y restablecer.
+- **Jugar/Detener** y CLI para CI: `--version`, `--data-dir`, `--check-iso`,
+  `--prepare`, `--play`.
+
+Los datos (configuración, tarjeta, `keys.ini`, savestates) viven en `data/` junto al
+ejecutable o, si no se puede escribir, en `%APPDATA%/OverEtheria`. Ver
+[`launcher/README.md`](../../launcher/README.md) y el change
+`aspec/changes/native-launcher/`.
 
 ## Receta para el próximo overlay
 

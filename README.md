@@ -28,6 +28,10 @@ de punta a punta: falta explorar las 25 misiones y pulir el runtime.
 | Menú principal | ✅ `Story Mode / Start New` |
 | Cutscene inicial | ✅ escena 3D, retrato y diálogo, ~33 fps |
 | Gameplay (inicio de misión) | ✅ combate 3D con tutorial `Tap ⬜ for combo attack`, ~48 fps |
+| 60 Hz (NTSC) | ✅ `SetGsCrt mode 0x2` y 60.0 fps |
+| Idiomas | ✅ los 5 (EN/FR/DE/IT/ES) con acentos |
+| Memory card | ✅ detectada; `Load Game` disponible (guardado real: después del tutorial) |
+| Launcher (ISO + video + controles + lanzar) | ✅ `launcher/` |
 | Misión completa | ⏳ pendiente (input, cámara y fin de misión) |
 | Port a otras consolas | ⏳ pendiente (backends del runtime) |
 
@@ -63,15 +67,28 @@ build/native-sword/ps2run games/sword/disc/SLES_537.68 \
   --disc games/sword/disc.iso --window
 ```
 
+O con el launcher, que hace los pasos 2–4 y lanza el juego con el ISO, la memory card y
+los ajustes de video/controles:
+
+```bash
+cmake -S launcher -B build/launcher -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build/launcher
+build/launcher/bin/overetheria-launcher
+```
+
+En Windows, `powershell -File scripts/prepare-game.ps1 -Iso "D:\Sword of Etheria.iso"`
+hace lo mismo que los pasos 2–4 desde la línea de comandos.
+
 `games/sword/` (ELF, `disc.iso`, overlays, entradas) y `build/` son locales e ignorados.
 
 ## Cómo está armado
 
 ```
 decomp/     mapa de módulos, símbolos, ABI y reportes (el C decompilado es local)
+launcher/   launcher de escritorio (ISO, video, controles, memory card, CI)
 recomp/     baseline de PS2Recomp (histórico) y mapas de funciones
 docs/       análisis, formatos, roadmap y runtime nativo
-scripts/    inspección del disco, entradas de overlays, captura de ventana
+scripts/    inspección del disco, preparación, entradas de overlays, captura
 patches/    parches propios sobre ps2-native-recomp
 aspec/      artefactos de cambios spec-driven
 work/       artefactos locales (ignorado)

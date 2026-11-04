@@ -1,0 +1,73 @@
+name: launcher
+
+on:
+  push:
+    branches: [main, visual/advance-display-and-main-loop]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: launcher (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SDL2 (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libsdl2-dev
+
+      - name: Configure
+        run: cmake -S launcher -B build/launcher -DOE_CONSOLE=ON -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build/launcher --config Release
+
+      - name: Smoke test (Unix)
+        if: runner.os == 'Linux'
+        run: |
+          ./build/launcher/bin/overetheria-launcher --version
+          ./build/launcher/bin/overetheria-launcher --data-dir
+
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $exe = "build/launcher/bin/Release/overetheria-launcher.exe"
+          if (-not (Test-Path $exe)) { $exe = "build/launcher/bin/overetheria-launcher.exe" }
+          $p = Start-Process -FilePath $exe -ArgumentList '--version' -Wait -PassThru -NoNewWindow
+          if ($p.ExitCode -ne 0) { throw "launcher --version devolvió $($p.ExitCode)" }
+
+  no-game-content:
+    name: no game content tracked
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject ISO/BIOS/ELF/overlays/generated code in git
+        run: |
+          set -e
+          bad=$(git ls-files | grep -Ei '\.(iso|bin|pss|irx|elf|ps2)$|^generated/|^decomp/src/' || true)
+          if [ -n "$bad" ]; then
+            echo "Archivos con contenido del juego versionados:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "sin contenido del juego versionado"
+
+  scripts:
+    name: scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: bash syntax
+        run: bash -n scripts/prepare-game.sh
+      - name: PowerShell parser
+        shell: pwsh
+        run: |
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$PWD/scripts/prepare-game.ps1", [ref]$null, [ref]$errors) | Out-Null
+          if ($errors.Count) { $errors | ForEach-Object { Write-Error $_ }; exit 1 }
