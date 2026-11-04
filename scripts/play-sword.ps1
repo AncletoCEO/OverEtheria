@@ -29,7 +29,8 @@ $presses = @('300:cross:8', '600:cross:8', '900:cross:8',
 $frame = 4000
 switch ($Cutscene) {
     'Fast' {
-        while ($frame -lt 20000) { $presses += "${frame}:cross:600"; $frame += 650 }
+        # Pulsos cortos: mantener cruz sólo acelera el texto, no pasa de línea.
+        while ($frame -lt 20000) { $presses += "${frame}:cross:5"; $frame += 120 }
     }
     'Skip' {
         $presses += '3800:start:600'
