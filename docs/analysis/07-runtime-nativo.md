@@ -66,6 +66,7 @@ Rama `visual/advance-display-and-main-loop`, 2026-11-03:
 | Menú principal | `THE SWORD OF ETHERIA — Story Mode / Start New`, ~50 fps |
 | Cutscene inicial | escena 3D, retrato y diálogo, ~33 fps (compilando VU en vivo) |
 | Diálogo con varios personajes | el texto avanza con cruz y cambia de retrato, ~36 fps |
+| Diálogo a dos voces | dos retratos simultáneos (Almira y Cain) con caja superior e inferior, ~39 fps |
 
 El log de la corrida muestra `[ee-live] switched in the library of window
 0x00100000` y `[vu-live] N new vector programs compiled`, es decir el runtime
