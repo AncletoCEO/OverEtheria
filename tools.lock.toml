@@ -82,3 +82,11 @@ license = "Apache-2.0"
 role = "procesador R5900 (64-bit, MMI, VU0 macro) y analizadores"
 local_path = "tools/ghidra/Ghidra/Processors/R5900"
 note = "El zip trae Module.manifest vacío; se completó y r5900.sla se compiló con support/sleigh."
+
+[ps2-native-recomp]
+repo = "https://github.com/exoteric33/ps2-native-recomp"
+commit = "263508314076fda7837b51434222578331047273"
+license = "MIT"
+role = "recompilador (eerecomp/vurecomp) y runtime del juego"
+local_path = "tools/ps2-native-recomp"
+note = "prepare-game fija este commit antes de aplicar patches/ps2-native-recomp-sword.patch; el parche se genera contra el."

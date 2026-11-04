@@ -51,6 +51,12 @@ git -C tools/ps2-native-recomp apply ../../patches/ps2-native-recomp-sword.patch
    `jal`. Cada `addiu sp,sp,-N` del rango de texto se siembra como entrada.
 4. **`Image::raw(..., executable_size)`** (`recomp/elf.cpp`, `recomp/elf.hpp`):
    soporte del punto 2 (los bytes siguen legibles; `Image::executable` corta en texto).
+5. **Modo carpeta en `runtime/src/disc.cpp`**: leer el disco extraído sin ISO.
+
+El clon del runtime queda **fijado** al commit
+`263508314076fda7837b51434222578331047273` (ver `tools.lock.toml`): el parche se genera
+contra ese commit y `prepare-game` lo restaura antes de aplicarlo, así un clon viejo o
+con un parche anterior no rompe la preparación.
 
 La lista completa de entradas del menú se regenera con
 `scripts/make-overlay-entries.py` y se guarda en `games/sword/entries.txt`

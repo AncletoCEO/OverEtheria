@@ -22,11 +22,16 @@ $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 if (-not $Game) { $Game = Join-Path $PSScriptRoot '..\tools\ps2-native-recomp' }
 if (-not $Data) { $Data = Join-Path $repo 'work' }
-# Sin runtime clonado (paquete nuevo) se clona solo; después los parches lo ajustan.
+# Commit exacto contra el que se genera patches/ps2-native-recomp-sword.patch.
+$RecompCommit = '263508314076fda7837b51434222578331047273'
+# Sin runtime clonado (paquete nuevo) se clona solo.
 if (-not (Test-Path (Join-Path $Game 'scripts\port.sh'))) {
+    if ((Test-Path $Game) -and (Get-ChildItem $Game -Force -ErrorAction SilentlyContinue)) {
+        Say "la carpeta $Game existe y no es un clon de ps2-native-recomp; movela o vaciala"; exit 1
+    }
     Say "clonando ps2-native-recomp en $Game"
     New-Item -ItemType Directory -Force (Split-Path -Parent $Game) | Out-Null
-    & git clone --depth 1 https://github.com/exoteric33/ps2-native-recomp $Game
+    & git clone https://github.com/exoteric33/ps2-native-recomp $Game
     if ($LASTEXITCODE -ne 0) { Say 'no se pudo clonar ps2-native-recomp (¿git y red?)'; exit 1 }
 }
 $Game = (Resolve-Path $Game).Path
@@ -76,16 +81,21 @@ $repo_posix = $repo -replace '\\', '/'
 $disc_dir = Join-Path $Data 'game\disc'
 $disc_posix = ($disc_dir -replace '\\', '/')
 
-# 1. parches propios sobre el runtime
+# 1. fijar el commit del runtime y aplicar los parches propios
+& git -C $Game fetch --quiet origin $RecompCommit 2>$null
+Say "fijando el runtime en $RecompCommit"
+& git -C $Game checkout --quiet --force $RecompCommit
+if ($LASTEXITCODE -ne 0) { Say 'no se pudo fijar el commit del runtime (¿red?)'; exit 1 }
+
 $patch = Join-Path $repo 'patches\ps2-native-recomp-sword.patch'
 if (Test-Path $patch) {
-    & git -C $Game apply --reverse --check $patch 2>$null
+    Say 'aplicando patches/ps2-native-recomp-sword.patch'
+    & git -C $Game apply $patch
     if ($LASTEXITCODE -ne 0) {
-        Say 'aplicando patches/ps2-native-recomp-sword.patch'
+        Say 'el parche no aplica sobre este clon: se restaura el commit y se reintenta'
+        & git -C $Game reset --hard --quiet $RecompCommit
         & git -C $Game apply $patch
         if ($LASTEXITCODE -ne 0) { Say 'no se pudo aplicar el parche del runtime'; exit 1 }
-    } else {
-        Say 'parche del runtime ya aplicado'
     }
 }
 

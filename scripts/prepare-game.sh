@@ -41,20 +41,32 @@ say() { echo "[prepare] $*"; }
 # runtime puede vivir en cualquier carpeta, así que la ruta relativa no alcanza).
 export PS2_ELF_WINDOW_PATCH="$repo/scripts/patch-elf-window.py"
 
+# Commit exacto contra el que se genera patches/ps2-native-recomp-sword.patch.
+recomp_commit="263508314076fda7837b51434222578331047273"
+
 if [ ! -f "$game/scripts/port.sh" ]; then
+    if [ -d "$game" ] && [ -n "$(ls -A "$game" 2> /dev/null)" ]; then
+        say "la carpeta $game existe y no es un clon de ps2-native-recomp; movela o vaciala"
+        exit 1
+    fi
     say "clonando ps2-native-recomp en $game"
     mkdir -p "$(dirname "$game")"
-    git clone --depth 1 https://github.com/exoteric33/ps2-native-recomp "$game"
+    git clone https://github.com/exoteric33/ps2-native-recomp "$game"
 fi
 game="$(cd "$game" && pwd)"
 
+# 1. fijar el commit del runtime y aplicar el parche propio
+git -C "$game" fetch --quiet origin "$recomp_commit"
+say "fijando el runtime en $recomp_commit"
+git -C "$game" checkout --quiet --force "$recomp_commit"
+
 patch="$repo/patches/ps2-native-recomp-sword.patch"
 if [ -f "$patch" ]; then
-    if git -C "$game" apply --reverse --check "$patch" > /dev/null 2>&1; then
-        say "parche del runtime ya aplicado"
-    else
-        say "aplicando patches/ps2-native-recomp-sword.patch"
-        git -C "$game" apply "$patch"
+    say "aplicando patches/ps2-native-recomp-sword.patch"
+    if ! git -C "$game" apply "$patch"; then
+        say "el parche no aplica sobre este clon: se restaura el commit y se reintenta"
+        git -C "$game" reset --hard --quiet "$recomp_commit"
+        git -C "$game" apply "$patch" || { say "no se pudo aplicar el parche del runtime"; exit 1; }
     fi
 fi
 
