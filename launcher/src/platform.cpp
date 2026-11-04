@@ -129,7 +129,13 @@ bool assets_ready(const Config &c) {
 std::string quick_dir() { return (fs::path(data_dir()) / "quick").string(); }
 std::string game_id(const Config &c) { return c.serial == "SLPM_660.33" ? "oz" : "sword"; }
 std::string elf_name(const Config &c) { return c.serial == "SLPM_660.33" ? "SLPM_660.33" : "SLES_537.68"; }
-std::string game_exe(const Config &c) { return (fs::path(c.game) / "build" / ("native-" + game_id(c)) / "ps2run.exe").string(); }
+std::string game_exe(const Config &c) {
+#ifdef _WIN32
+    return (fs::path(c.game) / "build" / ("native-" + game_id(c)) / "ps2run.exe").string();
+#else
+    return (fs::path(c.game) / "build" / ("native-" + game_id(c)) / "ps2run").string();
+#endif
+}
 std::string game_elf(const Config &c) {
     return (fs::path(c.game) / "games" / game_id(c) / "disc" / elf_name(c)).string();
 }

@@ -40,6 +40,8 @@ jobs:
         run: |
           ./build/launcher/bin/overetheria-launcher --version
           ./build/launcher/bin/overetheria-launcher --data-dir
+          ./build/launcher/bin/overetheria-launcher --print-paths | tee /tmp/oe-paths.txt
+          grep -qE '^exe=.*/ps2run$' /tmp/oe-paths.txt
 
       - name: Smoke test (Windows)
         if: runner.os == 'Windows'
@@ -58,6 +60,9 @@ jobs:
           Write-Output "exit=$code out=$out"
           if ($code -ne 0) { throw "launcher --version devolvió $code" }
           if ("$out" -notmatch '\d+\.\d+') { throw "sin salida de versión: $out" }
+          $paths = & $exe --print-paths 2>&1
+          Write-Output $paths
+          if ("$paths" -notmatch 'exe=.*ps2run\.exe') { throw "la ruta del ejecutable no termina en ps2run.exe" }
 
   no-game-content:
     name: no game content tracked

@@ -95,6 +95,8 @@ def main():
     parser.add_argument('dest', help='carpeta de destino, o el archivo de salida con --pick')
     parser.add_argument('--pick', metavar='NOMBRE', help='extrae sólo ese archivo (p. ej. OL.BIN)')
     parser.add_argument('--force', action='store_true', help='reescribe todo aunque ya esté')
+    parser.add_argument('--progress-base', type=float, default=None, help='porcentaje al empezar (para el launcher)')
+    parser.add_argument('--progress-end', type=float, default=None, help='porcentaje al terminar')
     args = parser.parse_args()
 
     iso = Iso(args.iso)
@@ -114,6 +116,8 @@ def main():
 
     done = skipped = 0
     total = 0
+    grand_total = sum(size for _, size, _ in iso.files) or 1
+    last_report = -1
     for lba, size, rel in iso.files:
         target = os.path.join(args.dest, *rel.split('/'))
         os.makedirs(os.path.dirname(target), exist_ok=True)
@@ -133,7 +137,13 @@ def main():
                 at += (len(chunk) + SECTOR - 1) // SECTOR
         done += 1
         total += size
-        if done % 32 == 0 or size > 32 << 20:
+        if args.progress_base is not None and args.progress_end is not None:
+            share = args.progress_base + (args.progress_end - args.progress_base) * min(1.0, total / grand_total)
+            step = int(share)
+            if step != last_report:
+                last_report = step
+                print('[progress] %d copiando el contenido del juego (%.1f GB)' % (step, total / 1e9), flush=True)
+        elif done % 32 == 0 or size > 32 << 20:
             print('[extract] %d archivos escritos, %.0f MB' % (done, total / 1e6), flush=True)
 
     with open(os.path.join(args.dest, MARKER), 'w', encoding='utf-8') as marker:

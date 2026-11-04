@@ -14,6 +14,7 @@
 #endif
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
@@ -93,6 +94,32 @@ std::pair<std::size_t, std::uint64_t> dir_stats(const std::string &dir) {
     return {files, bytes};
 }
 
+struct Progress {
+    int percent = 0;
+    std::string text;
+    bool found = false;
+};
+
+Progress read_progress(const std::string &path) {
+    Progress progress;
+    std::ifstream in(path);
+    if (!in) return progress;
+    std::string line;
+    while (std::getline(in, line)) {
+        std::string clean_line = clean(line);
+        if (clean_line.rfind("\xEF\xBB\xBF", 0) == 0) clean_line.erase(0, 3);  // BOM del registro
+        if (clean_line.rfind("[progress] ", 0) != 0) continue;
+        const std::size_t space = clean_line.find(' ', 11);
+        const std::string number = clean_line.substr(11, space == std::string::npos ? std::string::npos : space - 11);
+        const int percent = std::atoi(number.c_str());
+        if (percent < 0 || percent > 100) continue;
+        progress.percent = percent;
+        progress.text = space == std::string::npos ? std::string{} : clean_line.substr(space + 1);
+        progress.found = true;
+    }
+    return progress;
+}
+
 std::string suggested_game_dir() {
     // <repo>/tools/ps2-native-recomp when the launcher lives inside the repo; otherwise a
     // writable folder in the data directory (the release package ships no runtime).
@@ -116,8 +143,13 @@ int main(int argc, char **argv) {
         std::freopen("CONOUT$", "w", stderr);
     }
 #endif
+    bool demo_progress = false;
     for (int i = 1; i < argc; ++i) {
         const std::string arg = argv[i];
+        if (arg == "--progress-demo") {
+            demo_progress = true;  // sólo para capturas: muestra la barra con el registro actual
+            continue;
+        }
         if (arg == "--version") {
             std::printf("%s launcher %s\n", kTitle, kVersion);
             return 0;
@@ -130,6 +162,23 @@ int main(int argc, char **argv) {
             const oe::IsoCheck check = oe::check_iso(argv[i + 1]);
             std::printf("%s %s\n", check.ok ? "ok" : "error", check.message.c_str());
             return check.ok ? 0 : 1;
+        }
+        if (arg == "--last-progress" && i + 1 < argc) {
+            const Progress progress = read_progress(argv[i + 1]);
+            std::printf("%d %s\n", progress.percent, progress.text.c_str());
+            return progress.found ? 0 : 1;
+        }
+        if (arg == "--print-paths") {
+            oe::Config paths;
+            if (!oe::load_config(paths)) paths = oe::Config{};
+            if (paths.game.empty()) paths.game = suggested_game_dir();
+            if (paths.memcard.empty()) paths.memcard = oe::default_memcard();
+            if (paths.assets.empty()) paths.assets = oe::default_assets();
+            if (paths.serial.empty()) paths.serial = "SLES_537.68";
+            std::printf("game=%s\nexe=%s\nelf=%s\nassets=%s\nmemcard=%s\n", paths.game.c_str(),
+                        oe::game_exe(paths).c_str(), oe::game_elf(paths).c_str(), paths.assets.c_str(),
+                        paths.memcard.c_str());
+            return 0;
         }
         if (arg == "--play") {
             oe::Config play_config;
@@ -214,11 +263,10 @@ int main(int argc, char **argv) {
     bool confirm_card_reset = false;
     std::string prepare_log = (fs::path(oe::data_dir()) / "prepare.log").string();
     std::string prepare_message;
-    bool preparing = false;
+    bool preparing = demo_progress;
 
     bool running = false;
     std::string play_error;
-
     bool quit = false;
     while (!quit) {
         SDL_Event event;
@@ -254,12 +302,17 @@ int main(int argc, char **argv) {
             running = false;
             oe::wait_game();
         }
-        if (preparing && !oe::prepare_running()) {
+        if (!demo_progress && preparing && !oe::prepare_running()) {
             preparing = false;
             const int code = oe::prepare_wait();
-            prepare_message = (code == 0 && oe::game_built(config))
-                                  ? "Juego construido. Ya podés jugar."
-                                  : "La preparación falló (código " + std::to_string(code) + "): mirá el registro de abajo.";
+            if (code == 0 && oe::game_built(config)) {
+                prepare_message = "Listo: el juego está preparado.";
+            } else if (code == 0) {
+                prepare_message = "La preparación terminó pero falta el ejecutable del juego. Revisá el registro.";
+            } else {
+                prepare_message = "La preparación no terminó (código " + std::to_string(code) +
+                                  "). Revisá el registro para ver qué pasó.";
+            }
         }
 
         ImGui_ImplSDLRenderer2_NewFrame();
@@ -285,14 +338,14 @@ int main(int argc, char **argv) {
         if (ImGui::BeginTabBar("##tabs")) {
             if (ImGui::BeginTabItem("Juego")) {
                 ImGui::Spacing();
-                ImGui::TextWrapped("Elegí tu copia de Sword of Etheria (PAL, SLES_537.68). El launcher comprueba el "
-                                   "disco y construye el juego localmente; el ISO y el juego nunca se suben al repo.");
+                ImGui::TextWrapped("Elegí tu copia de Sword of Etheria. Comprobamos el disco y preparamos el juego en tu "
+                                   "equipo: el ISO no se sube a ningún lado y, cuando termina, ya no lo necesitás.");
                 ImGui::Spacing();
                 char iso_buffer[1024];
                 std::snprintf(iso_buffer, sizeof iso_buffer, "%s", config.iso.c_str());
                 ImGui::SetNextItemWidth(-1);
                 if (ImGui::InputText("##iso", iso_buffer, sizeof iso_buffer)) config.iso = iso_buffer;
-                if (ImGui::Button("Elegir ISO…")) {
+                if (ImGui::Button("Elegir ISO...")) {
                     const std::string picked = oe::pick_file("ISO", "*.iso");
                     if (!picked.empty()) config.iso = picked;
                 }
@@ -303,35 +356,40 @@ int main(int argc, char **argv) {
                     if (iso.ok) config.serial = iso.serial;
                 }
                 ImGui::SameLine();
-                ImGui::TextDisabled("%s", config.iso.empty() ? "ningún archivo" : config.iso.c_str());
+                ImGui::TextDisabled("%s", config.iso.empty() ? "ningún archivo elegido" : config.iso.c_str());
                 ImGui::TextColored(iso_ok ? ImVec4(0.4f, 0.9f, 0.5f, 1.0f) : ImVec4(0.9f, 0.55f, 0.45f, 1.0f),
-                                   "%s", iso.message.empty() ? "Todavía no se comprobó el ISO." : iso.message.c_str());
+                                   "%s", iso.message.empty() ? "Elegí el archivo y pulsá «Comprobar»." : iso.message.c_str());
 
                 ImGui::Spacing();
                 ImGui::Separator();
-                ImGui::Text("Carpeta del runtime (clon de ps2-native-recomp)");
+                ImGui::Text("Carpeta del motor del juego");
                 char game_buffer[1024];
                 std::snprintf(game_buffer, sizeof game_buffer, "%s", config.game.c_str());
                 ImGui::SetNextItemWidth(-1);
                 if (ImGui::InputText("##game", game_buffer, sizeof game_buffer)) config.game = game_buffer;
                 ImGui::TextColored(oe::game_built(config) ? ImVec4(0.4f, 0.9f, 0.5f, 1.0f) : ImVec4(0.9f, 0.55f, 0.45f, 1.0f),
-                                   "%s", oe::game_built(config) ? "ps2run.exe construido."
-                                                                : "Falta construir el juego (ps2run.exe).");
+                                   "%s", oe::game_built(config) ? "El juego está preparado."
+                                                                : "Todavía falta preparar el juego.");
                 ImGui::BeginDisabled(!iso_ok || preparing);
                 if (ImGui::Button("Preparar juego")) {
                     std::error_code ec;
                     fs::create_directories(oe::data_dir(), ec);
                     std::ofstream(prepare_log, std::ios::trunc).close();  // cada preparación empieza limpia
                     preparing = oe::prepare_game(config, prepare_log);
-                    prepare_message = preparing ? "Construyendo: esto tarda varios minutos."
-                                                : "No se pudo lanzar scripts/prepare-game.ps1.";
+                    prepare_message = preparing ? "Preparando el juego: puede tardar varios minutos."
+                                                : "No se pudo empezar la preparación (revisá el registro).";
                 }
                 ImGui::EndDisabled();
-                if (!prepare_message.empty()) ImGui::TextWrapped("%s", prepare_message.c_str());
                 if (preparing) {
-                    ImGui::SameLine();
-                    ImGui::TextDisabled("(…)"); 
+                    const Progress progress = read_progress(prepare_log);
+                    const std::string label = std::to_string(progress.percent) + "%  " +
+                                              (progress.text.empty() ? "preparando el juego" : progress.text);
+                    ImGui::ProgressBar(static_cast<float>(progress.percent) / 100.0f, ImVec2(-1, 0), label.c_str());
+                } else if (!prepare_message.empty()) {
+                    ImGui::TextWrapped("%s", prepare_message.c_str());
                 }
+                ImGui::SameLine();
+                if (ImGui::Button("Abrir registro")) oe::open_path(prepare_log);
                 if (ImGui::CollapsingHeader("Registro de la preparación")) {
                     const std::string log = tail(prepare_log, 200);
                     ImGui::BeginChild("##log", ImVec2(0, 240), true);
@@ -349,7 +407,7 @@ int main(int argc, char **argv) {
                 const bool extracted = oe::assets_ready(config);
                 if (extracted) {
                     const auto [files, bytes] = dir_stats(config.assets);
-                    ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.5f, 1.0f), "Extraído: %zu archivos, %.1f GB — el ISO ya no hace falta.",
+                    ImGui::TextColored(ImVec4(0.4f, 0.9f, 0.5f, 1.0f), "Extraído: %zu archivos, %.1f GB (el ISO ya no hace falta).",
                                        files, static_cast<double>(bytes) / 1e9);
                 } else {
                     ImGui::TextColored(ImVec4(0.95f, 0.75f, 0.3f, 1.0f),
@@ -372,7 +430,8 @@ int main(int argc, char **argv) {
                 ImGui::TextDisabled("1x es la resolución de la consola; 2x y 3x se ven más nítidos y piden más GPU.");
                 ImGui::Spacing();
                 if (ImGui::Checkbox("Pantalla completa", &config.fullscreen)) dirty = true;
-                if (ImGui::Checkbox("16:9 (widescreen)", &config.widescreen)) dirty = true;
+                if (ImGui::Checkbox("Panorámico (16:9)", &config.widescreen)) dirty = true;
+                ImGui::TextDisabled("Por ahora el panorámico estira la imagen; el ajuste Hor+ está planificado.");
                 ImGui::Spacing();
                 ImGui::Text("Formato de video");
                 if (ImGui::RadioButton("PAL (50 Hz)", !config.ntsc)) {
@@ -384,14 +443,14 @@ int main(int argc, char **argv) {
                     config.ntsc = true;
                     dirty = true;
                 }
-                ImGui::TextDisabled("El juego también pregunta el formato en el primer arranque; manda esta opción.");
+                ImGui::TextDisabled("El juego también lo pregunta la primera vez; esta opción manda.");
                 ImGui::EndTabItem();
             }
 
             if (ImGui::BeginTabItem("Controles")) {
                 ImGui::Spacing();
-                ImGui::TextWrapped("Pulsá «Cambiar» y después la tecla o el botón del mouse. Se guarda en keys.ini del "
-                                   "runtime; el juego también permite reasignar con F1.");
+                ImGui::TextWrapped("Pulsá «Cambiar» y después la tecla o el botón del mouse. Se guarda para el juego; "
+                                   "también podés reasignar con F1 dentro del juego.");
                 ImGui::Spacing();
                 if (ImGui::BeginTable("##bindings", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_SizingStretchProp)) {
                     ImGui::TableSetupColumn("Acción", ImGuiTableColumnFlags_WidthStretch, 0.45f);
@@ -408,7 +467,7 @@ int main(int argc, char **argv) {
                         ImGui::TextUnformatted(keys.empty() ? "(ninguna)" : keys.c_str());
                         ImGui::TableSetColumnIndex(2);
                         if (capturing == i) {
-                            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "pulsá…");
+                            ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "pulsá una tecla");
                         } else if (ImGui::Button((std::string("Cambiar##") + std::to_string(i)).c_str())) {
                             capturing = i;
                         }
@@ -421,14 +480,14 @@ int main(int argc, char **argv) {
                     dirty = true;
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Guardar keys.ini")) {
+                if (ImGui::Button("Guardar controles")) {
                     if (oe::write_keys_ini(config))
-                        prepare_message = "keys.ini guardado en " + oe::quick_dir();
+                        prepare_message = "Controles guardados para el juego.";
                     else
-                        prepare_message = "No se pudo escribir keys.ini.";
+                        prepare_message = "No se pudieron guardar los controles.";
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Abrir keys.ini")) oe::open_path((fs::path(oe::quick_dir()) / "keys.ini").string());
+                if (ImGui::Button("Ver archivo de controles")) oe::open_path((fs::path(oe::quick_dir()) / "keys.ini").string());
                 ImGui::EndTabItem();
             }
 
@@ -448,7 +507,7 @@ int main(int argc, char **argv) {
                 if (ImGui::Button("Abrir carpeta de guardado")) oe::open_path(fs::path(config.memcard).parent_path().string());
                 ImGui::SameLine();
                 ImGui::BeginDisabled(!exists);
-                if (ImGui::Button("Restablecer tarjeta…")) confirm_card_reset = true;
+                if (ImGui::Button("Restablecer tarjeta")) confirm_card_reset = true;
                 ImGui::EndDisabled();
                 if (confirm_card_reset) {
                     ImGui::TextColored(ImVec4(0.95f, 0.55f, 0.45f, 1.0f), "Se borran las partidas de esa tarjeta.");
@@ -460,7 +519,7 @@ int main(int argc, char **argv) {
                     if (ImGui::Button("Cancelar")) confirm_card_reset = false;
                 }
                 ImGui::Spacing();
-                ImGui::TextDisabled("Los savestates del runtime (F5/F8) son otra cosa: quedan en la carpeta quick.");
+                ImGui::TextDisabled("Las partidas rápidas (F5/F8) son aparte y quedan en la carpeta de datos.");
                 ImGui::EndTabItem();
             }
 

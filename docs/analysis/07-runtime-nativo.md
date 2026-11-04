@@ -222,6 +222,18 @@ ejecutable o, si no se puede escribir, en `%APPDATA%/OverEtheria`. Ver
 [`launcher/README.md`](../../launcher/README.md) y el change
 `aspec/changes/native-launcher/`.
 
+### Progreso de la preparación
+
+Los scripts `prepare-game.ps1`/`.sh` escriben `[progress] <0-100> <texto>` en su
+registro al empezar y terminar cada fase; el launcher lee la última línea y muestra una
+barra con el porcentaje y el paso actual. Dentro de la copia del contenido,
+`extract-disc.py --progress-base/--progress-end` traduce los MB copiados a porcentaje
+real. El registro se escribe en vivo (streaming), no al final.
+
+El nombre del ejecutable también depende de la plataforma (`ps2run.exe` en Windows,
+`ps2run` en Linux/macOS); `--print-paths` lo imprime y `--last-progress <log>` permite
+ver qué porcentaje entiende el launcher (útil para diagnóstico y CI).
+
 ## Receta para el próximo overlay
 
 `OL.BIN` carga módulos en `0x100000` y `0x154000`, ambas dentro de la ventana

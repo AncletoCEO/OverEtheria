@@ -24,17 +24,7 @@ if (-not $Game) { $Game = Join-Path $PSScriptRoot '..\tools\ps2-native-recomp' }
 if (-not $Data) { $Data = Join-Path $repo 'work' }
 # Commit exacto contra el que se genera patches/ps2-native-recomp-sword.patch.
 $RecompCommit = '263508314076fda7837b51434222578331047273'
-# Sin runtime clonado (paquete nuevo) se clona solo.
-if (-not (Test-Path (Join-Path $Game 'scripts\port.sh'))) {
-    if ((Test-Path $Game) -and (Get-ChildItem $Game -Force -ErrorAction SilentlyContinue)) {
-        Say "la carpeta $Game existe y no es un clon de ps2-native-recomp; movela o vaciala"; exit 1
-    }
-    Say "clonando ps2-native-recomp en $Game"
-    New-Item -ItemType Directory -Force (Split-Path -Parent $Game) | Out-Null
-    & git clone https://github.com/exoteric33/ps2-native-recomp $Game
-    if ($LASTEXITCODE -ne 0) { Say 'no se pudo clonar ps2-native-recomp (¿git y red?)'; exit 1 }
-}
-$Game = (Resolve-Path $Game).Path
+$Game = [System.IO.Path]::GetFullPath($Game)
 $Iso = (Resolve-Path $Iso).Path
 if (-not $Log) { $Log = Join-Path $repo 'work\prepare.log' }
 New-Item -ItemType Directory -Force (Split-Path -Parent $Log) | Out-Null
@@ -47,12 +37,30 @@ function Say($text) {
     Add-Content -Path $Log -Value $line -Encoding utf8
 }
 
-function RunStep($title, $command) {
+# Avance para el launcher: "[progress] <0-100> <texto>".
+function EmitProgress([int]$percent, $text) {
+    $line = '[progress] ' + $percent + ' ' + $text
+    Write-Output $line
+    Add-Content -Path $Log -Value $line -Encoding utf8
+}
+
+# Lanza un paso y escribe su salida en vivo (no al final). Si se pasan $from/$to,
+# traduce las fases de port.sh ("== [N/6]") en porcentaje dentro de ese tramo.
+function RunStep($title, $command, $from = $null, $to = $null) {
     Say $title
-    $out = & $bash -c $command 2>&1
+    if ($null -ne $from) { EmitProgress $from $title }
+    & $bash -c $command 2>&1 | ForEach-Object {
+        $text = [string]$_
+        Write-Output $text
+        Add-Content -Path $Log -Value $text -Encoding utf8
+        if (($null -ne $from) -and ($text -match '== \[(\d)/6\]')) {
+            $phase = [int]$matches[1]
+            $percent = [int]([math]::Round($from + ($to - $from) * ($phase - 1) / 6))
+            EmitProgress $percent ($title + ' (paso ' + $phase + ' de 6)')
+        }
+    }
     $script:last_code = $LASTEXITCODE
-    $out | Out-File -FilePath $Log -Append -Encoding utf8
-    $out | Write-Output
+    if ($null -ne $to) { EmitProgress $to ($title + ': listo') }
 }
 
 $env:PATH = @(
@@ -81,37 +89,51 @@ $repo_posix = $repo -replace '\\', '/'
 $disc_dir = Join-Path $Data 'game\disc'
 $disc_posix = ($disc_dir -replace '\\', '/')
 
+EmitProgress 2 'preparando el entorno'
+
+# Sin runtime clonado (paquete nuevo) se clona solo.
+if (-not (Test-Path (Join-Path $Game 'scripts\port.sh'))) {
+    if ((Test-Path $Game) -and (Get-ChildItem $Game -Force -ErrorAction SilentlyContinue)) {
+        Say "la carpeta $Game existe y no es un clon del runtime; movela o vaciala"; exit 1
+    }
+    EmitProgress 3 'descargando el motor del juego'
+    New-Item -ItemType Directory -Force (Split-Path -Parent $Game) | Out-Null
+    & git clone https://github.com/exoteric33/ps2-native-recomp $Game
+    if ($LASTEXITCODE -ne 0) { Say 'no se pudo descargar el motor del juego (¿git y red?)'; exit 1 }
+}
+
 # 1. fijar el commit del runtime y aplicar los parches propios
 & git -C $Game fetch --quiet origin $RecompCommit 2>$null
 Say "fijando el runtime en $RecompCommit"
 & git -C $Game checkout --quiet --force $RecompCommit
-if ($LASTEXITCODE -ne 0) { Say 'no se pudo fijar el commit del runtime (¿red?)'; exit 1 }
+if ($LASTEXITCODE -ne 0) { Say 'no se pudo preparar el runtime (¿red?)'; exit 1 }
 
 $patch = Join-Path $repo 'patches\ps2-native-recomp-sword.patch'
 if (Test-Path $patch) {
-    Say 'aplicando patches/ps2-native-recomp-sword.patch'
+    Say 'aplicando los ajustes del juego'
     & git -C $Game apply $patch
     if ($LASTEXITCODE -ne 0) {
-        Say 'el parche no aplica sobre este clon: se restaura el commit y se reintenta'
+        Say 'los ajustes no coinciden con esta versión del runtime: se restaura y se reintenta'
         & git -C $Game reset --hard --quiet $RecompCommit
         & git -C $Game apply $patch
-        if ($LASTEXITCODE -ne 0) { Say 'no se pudo aplicar el parche del runtime'; exit 1 }
+        if ($LASTEXITCODE -ne 0) { Say 'no se pudieron aplicar los ajustes del juego'; exit 1 }
     }
 }
+EmitProgress 6 'motor listo'
 
 # 2. herramientas del recompilador
 $eerecomp = Join-Path $Game 'build\tools\eerecomp.exe'
 if (-not (Test-Path $eerecomp)) {
-    RunStep 'compilando eerecomp/vurecomp (setup.sh --native-only)' "cd '$game_posix' && bash scripts/setup.sh --native-only"
-    if ($script:last_code -ne 0) { Say 'setup.sh falló'; exit 1 }
+    RunStep 'preparando las herramientas' "cd '$game_posix' && bash scripts/setup.sh --native-only" 6 12
+    if ($script:last_code -ne 0) { Say 'no se pudieron preparar las herramientas'; exit 1 }
 }
 
 # 3. juego desde el ISO
-RunStep "construyendo el juego $GameId desde $Iso" "cd '$game_posix' && bash scripts/port.sh $GameId '$iso_posix' --native-only"
-if ($script:last_code -ne 0) { Say 'port.sh falló (mirá las líneas de arriba)'; exit 1 }
+RunStep "construyendo el juego" "cd '$game_posix' && bash scripts/port.sh $GameId '$iso_posix' --native-only" 12 60
+if ($script:last_code -ne 0) { Say 'la construcción falló (mirá el registro)'; exit 1 }
 
-$run = Join-Path $Game ('build\native-' + $GameId + '\ps2run.exe')
-if (-not (Test-Path $run)) { Say 'port.sh terminó sin ps2run.exe'; exit 1 }
+$run = Get-ChildItem (Join-Path $Game ('build\native-' + $GameId)) -Filter 'ps2run*' -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $run) { Say 'la construcción terminó sin el ejecutable del juego'; exit 1 }
 
 # 3b. overlays del menú: el juego los carga en runtime y el pipeline sólo captura ventanas
 # de 16 KiB, así que se registran desde OL.BIN (imagen completa + rango de texto + init).
@@ -120,28 +142,32 @@ $overlays = Join-Path $games "$GameId\overlays"
 $entries = Join-Path $games "$GameId\entries.txt"
 $have_overlay = (Test-Path $overlays) -and ((Get-ChildItem $overlays -Filter '*.bin' -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0)
 if (-not $have_overlay) {
+    EmitProgress 62 'preparando el menú del juego'
     $ol = Join-Path $Data "$GameId-OL.BIN"
-    RunStep "extrayendo OL.BIN para registrar el menú" "cd '$repo_posix' && '$python' scripts/extract-disc.py '$iso_posix' '$($ol -replace '\\','/')' --pick OL.BIN"
-    if ($script:last_code -ne 0) { Say 'no se pudo extraer OL.BIN'; exit 1 }
-    Say 'registrando el overlay del menú'
+    RunStep 'leyendo el menú del juego' "cd '$repo_posix' && '$python' scripts/extract-disc.py '$iso_posix' '$($ol -replace '\\','/')' --pick OL.BIN" 62 63
+    if ($script:last_code -ne 0) { Say 'no se pudo leer el menú del juego'; exit 1 }
+    Say 'registrando el menú del juego'
     $tokens = & $python (Join-Path $repo 'scripts\register-overlay.py') $ol 'menu.bin' $overlays
-    if ($LASTEXITCODE -ne 0) { Say 'register-overlay falló'; exit 1 }
+    if ($LASTEXITCODE -ne 0) { Say 'no se pudo registrar el menú del juego'; exit 1 }
     if ($tokens) {
         Add-Content -Path $entries -Value $tokens
-        RunStep "reconstruyendo con el overlay del menú" "cd '$game_posix' && bash scripts/port.sh $GameId '$iso_posix' --native-only"
-        if ($script:last_code -ne 0) { Say 'port.sh falló al reconstruir con el overlay'; exit 1 }
+        RunStep "terminando la construcción" "cd '$game_posix' && bash scripts/port.sh $GameId '$iso_posix' --native-only" 63 70
+        if ($script:last_code -ne 0) { Say 'la construcción falló al registrar el menú'; exit 1 }
     }
 }
 
 # 4. contenido del ISO, para no volver a usarlo
 $marker = Join-Path $disc_dir '.extracted'
 if (Test-Path $marker) {
-    Say "contenido ya extraído en $disc_dir"
+    Say "el contenido del juego ya estaba copiado en $disc_dir"
+    EmitProgress 99 'contenido ya copiado'
 } else {
-    RunStep "extrayendo el contenido del ISO a $disc_dir (una sola vez)" "cd '$repo_posix' && '$python' scripts/extract-disc.py '$iso_posix' '$disc_posix'"
-    if ($script:last_code -ne 0) { Say 'la extracción falló'; exit 1 }
+    EmitProgress 70 'copiando el contenido del juego (4,5 GB, una sola vez)'
+    RunStep 'copiando el contenido del juego' "cd '$repo_posix' && '$python' scripts/extract-disc.py '$iso_posix' '$disc_posix' --progress-base 70 --progress-end 99" 70 99
+    if ($script:last_code -ne 0) { Say 'no se pudo copiar el contenido del juego (¿espacio en disco?)'; exit 1 }
 }
 
-Say "listo: $run"
-Say "disco extraído: $disc_dir"
+EmitProgress 100 'listo para jugar'
+Say "listo: $($run.FullName)"
+Say "contenido del juego: $disc_dir"
 exit 0
