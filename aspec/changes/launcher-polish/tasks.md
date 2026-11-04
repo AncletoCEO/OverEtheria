@@ -2,12 +2,12 @@
 
 ## Fase 1 — CI de release
 
-- [ ] Workflow `release.yml` en tags `v*` y `workflow_dispatch`.
-- [ ] Windows: launcher + SDL2.dll + `scripts/` + `patches/` en un `.zip`.
-- [ ] Linux: launcher + `scripts/` + `patches/` en un AppImage (linuxdeploy).
-- [ ] Publicar los artefactos en el Release de GitHub.
+- [x] Workflow `release.yml` en tags `v*` y `workflow_dispatch`.
+- [x] Windows: launcher + SDL2.dll + `scripts/` + `patches/` en un `.zip`.
+- [x] Linux: launcher + `scripts/` + `patches/` en un AppImage (linuxdeploy).
+- [x] Publicar los artefactos en el Release de GitHub (v0.1.1).
 
-**Gate**: el workflow produce los dos paquetes desde un tag.
+**Gate**: el workflow produce los dos paquetes desde un tag. ✅ (v0.1.1)
 
 ## Fase 2 — Paquete utilizable
 
