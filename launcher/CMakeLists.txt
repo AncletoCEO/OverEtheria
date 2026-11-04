@@ -72,8 +72,11 @@ else()
     endif()
 endif()
 
-# SDL2 as a shared library from the runtime's copy must sit next to the launcher.
-if(SDL2_FOUND AND TARGET SDL2::SDL2)
-    add_custom_command(TARGET overetheria-launcher POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:SDL2::SDL2> $<TARGET_FILE_DIR:overetheria-launcher>)
+# SDL2 as a shared library must sit next to the launcher (also when it comes from FetchContent).
+if(TARGET SDL2::SDL2)
+    get_target_property(oe_sdl2_type SDL2::SDL2 TYPE)
+    if(oe_sdl2_type STREQUAL "SHARED_LIBRARY")
+        add_custom_command(TARGET overetheria-launcher POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_FILE:SDL2::SDL2> $<TARGET_FILE_DIR:overetheria-launcher>)
+    endif()
 endif()

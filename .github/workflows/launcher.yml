@@ -48,12 +48,16 @@ jobs:
           $exe = "build/launcher/bin/Release/overetheria-launcher.exe"
           if (-not (Test-Path $exe)) { $exe = "build/launcher/bin/overetheria-launcher.exe" }
           if (-not (Test-Path $exe)) { throw "no se encontró el ejecutable en build/launcher/bin" }
-          $dir = Split-Path -Parent (Resolve-Path $exe).Path
-          # En el runner no hay pantalla ni audio: se comprueba el binario y su DLL.
+          $exe = (Resolve-Path $exe).Path
+          $dir = Split-Path -Parent $exe
           if (-not (Test-Path (Join-Path $dir 'SDL2.dll'))) { throw "falta SDL2.dll junto al ejecutable" }
-          $size = (Get-Item $exe).Length
-          if ($size -lt 500KB) { throw "el ejecutable parece incompleto ($size bytes)" }
-          Write-Output "ok: $exe ($size bytes) con SDL2.dll"
+          Push-Location $dir
+          $out = & $exe --version 2>&1
+          $code = $LASTEXITCODE
+          Pop-Location
+          Write-Output "exit=$code out=$out"
+          if ($code -ne 0) { throw "launcher --version devolvió $code" }
+          if ("$out" -notmatch '\d+\.\d+') { throw "sin salida de versión: $out" }
 
   no-game-content:
     name: no game content tracked
