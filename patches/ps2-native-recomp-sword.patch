@@ -107,15 +107,22 @@ index e7ebcb1..034d5b1 100644
              overlay_code += code_size(programs.back());
              translations.push_back({&images.back(), &programs.back(), nullptr, "m_" + o.name + "_", false, o.name, o.size,
 diff --git a/scripts/port.sh b/scripts/port.sh
-index e68a5ae..058401e 100755
+index e68a5ae..a7b426e 100755
 --- a/scripts/port.sh
 +++ b/scripts/port.sh
-@@ -127,6 +127,9 @@ case "$program" in
+@@ -127,6 +127,16 @@ case "$program" in
      exit 1 ;;
  esac
  "${py[@]}" -I "$here/disc.py" extract "$iso" "$game/disc" "$program" > /dev/null
 +if [ "$program" = "SLES_537.68" ]; then
-+  "${py[@]}" -I "C:/repos/etheria/scripts/patch-elf-window.py" "$game/disc/$program" 0x100000 0xA1B40 || true
++  # window the game rewrites at run time (0x100000, 0xA1B40 bytes): the ELF
++  # marks the area as BSS without contents, so it must be given file size 0.
++  window_patch=${PS2_ELF_WINDOW_PATCH:-$here/../../../scripts/patch-elf-window.py}
++  if [ -f "$window_patch" ]; then
++    "${py[@]}" -I "$window_patch" "$game/disc/$program" 0x100000 0xA1B40 || true
++  else
++    echo "warning: no $window_patch: 0x100000 stays without a code window" >&2
++  fi
 +fi
  echo "boots $boot"
  crc=$("${py[@]}" -I "$here/pnach.py" crc "$game/disc/$program")
