@@ -39,9 +39,24 @@ evidencia. ✅
 
 **Gate**: CI verde en la rama de desarrollo.
 
-## Fase 3 — Pendiente para la próxima versión
+## Fase 3 — Contenido extraído y versiones
+
+- [x] Extractor `scripts/extract-disc.py` (ISO 9660, una o dos capas) con marcador
+      `.extracted` y reanudable.
+- [x] Modo carpeta en el runtime (`runtime/src/disc.cpp`): sectores virtuales por
+      archivo y relleno de ceros al final.
+- [x] La preparación extrae el contenido y el launcher juega desde la carpeta.
+- [x] Detección de `SLES_537.68` (PAL y undub) y `SLPM_660.33` (Japón) con game id
+      `sword`/`oz`.
+- [x] Ventana `0x100000` para el ELF japonés reutilizando un `PT_LOAD` vacío.
+- [ ] Registro del overlay del menú japonés (mismo método que PAL: extraer `menu.bin`
+      de `OL.BIN`, sembrar el rango de texto).
+- [ ] Probar el guardado real después del tutorial (gate manual).
+
+**Gate**: jugar sin el ISO con la versión PAL. ✅
+
+## Fase 4 — Pendiente para la próxima versión
 
 - [ ] Progreso de la preparación línea a línea (hoy se lee el registro).
 - [ ] File browser propio para Linux sin `zenity`.
 - [ ] Empaquetado portable (`data/` junto al ejecutable) y notas de release.
-- [ ] Gate manual de guardado real después del tutorial.

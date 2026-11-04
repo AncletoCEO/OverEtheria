@@ -41,6 +41,22 @@ El launcher SHALL exponer resolución interna, pantalla completa, 16:9, formato 
 - **WHEN** el usuario pulsa «Cambiar» en una acción y luego una tecla
 - **THEN** esa acción queda con la tecla nueva y `keys.ini` la conserva para el juego
 
+### Requirement: Contenido extraído (el ISO se usa una sola vez)
+
+El launcher SHALL extraer el contenido del ISO a una carpeta y SHALL lanzar el juego
+desde esa carpeta, de modo que el ISO no haga falta después de preparar.
+
+#### Scenario: Jugar sin el ISO
+
+- **WHEN** la preparación terminó y el marcador `.extracted` existe
+- **THEN** el juego se lanza con `--disc <carpeta>` y funciona sin el ISO
+
+#### Scenario: Varias versiones
+
+- **WHEN** el ISO es PAL (`SLES_537.68`) o japonés (`SLPM_660.33`)
+- **THEN** el launcher reconoce el serial y construye el juego con el identificador
+  correspondiente (`sword` u `oz`)
+
 ### Requirement: Memory card
 
 El launcher SHALL lanzar el juego con una memory card de 8 MB en la carpeta de datos y
