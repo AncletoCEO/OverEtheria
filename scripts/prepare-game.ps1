@@ -89,8 +89,28 @@ if (-not (Test-Path $eerecomp)) {
 RunStep "construyendo el juego $GameId desde $Iso" "cd '$game_posix' && bash scripts/port.sh $GameId '$iso_posix' --native-only"
 if ($script:last_code -ne 0) { Say 'port.sh falló (mirá las líneas de arriba)'; exit 1 }
 
-$run = Join-Path $Game 'build\native-sword\ps2run.exe'
+$run = Join-Path $Game ('build\native-' + $GameId + '\ps2run.exe')
 if (-not (Test-Path $run)) { Say 'port.sh terminó sin ps2run.exe'; exit 1 }
+
+# 3b. overlays del menú: el juego los carga en runtime y el pipeline sólo captura ventanas
+# de 16 KiB, así que se registran desde OL.BIN (imagen completa + rango de texto + init).
+$games = Join-Path $Game 'games'
+$overlays = Join-Path $games "$GameId\overlays"
+$entries = Join-Path $games "$GameId\entries.txt"
+$have_overlay = (Test-Path $overlays) -and ((Get-ChildItem $overlays -Filter '*.bin' -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0)
+if (-not $have_overlay) {
+    $ol = Join-Path $Data "$GameId-OL.BIN"
+    RunStep "extrayendo OL.BIN para registrar el menú" "cd '$repo_posix' && '$python' scripts/extract-disc.py '$iso_posix' '$($ol -replace '\\','/')' --pick OL.BIN"
+    if ($script:last_code -ne 0) { Say 'no se pudo extraer OL.BIN'; exit 1 }
+    Say 'registrando el overlay del menú'
+    $tokens = & $python (Join-Path $repo 'scripts\register-overlay.py') $ol 'menu.bin' $overlays
+    if ($LASTEXITCODE -ne 0) { Say 'register-overlay falló'; exit 1 }
+    if ($tokens) {
+        Add-Content -Path $entries -Value $tokens
+        RunStep "reconstruyendo con el overlay del menú" "cd '$game_posix' && bash scripts/port.sh $GameId '$iso_posix' --native-only"
+        if ($script:last_code -ne 0) { Say 'port.sh falló al reconstruir con el overlay'; exit 1 }
+    }
+}
 
 # 4. contenido del ISO, para no volver a usarlo
 $marker = Join-Path $disc_dir '.extracted'

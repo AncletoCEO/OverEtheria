@@ -30,6 +30,7 @@ de punta a punta: falta explorar las 25 misiones y pulir el runtime.
 | Gameplay (inicio de misión) | ✅ combate 3D con tutorial `Tap ⬜ for combo attack`, ~48 fps |
 | 60 Hz (NTSC) | ✅ `SetGsCrt mode 0x2` y 60.0 fps |
 | Idiomas | ✅ los 5 (EN/FR/DE/IT/ES) con acentos |
+| Versión japonesa (`Oz`, `SLPM_660.33`) | ✅ compila y muestra el attract «OZ» a 60 fps |
 | Memory card | ✅ detectada; `Load Game` disponible (guardado real: después del tutorial) |
 | Launcher (ISO + video + controles + lanzar) | ✅ `launcher/` |
 | Misión completa | ⏳ pendiente (input, cámara y fin de misión) |

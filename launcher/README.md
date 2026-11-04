@@ -30,7 +30,7 @@ cae al ISO.
 |---|---|---|
 | PAL (`Sword of Etheria, The (Europe)`) | `SLES_537.68` | completo |
 | PAL *undub* v1.0 | `SLES_537.68` | completo (mismo ejecutable) |
-| Japón (`Oz`) | `SLPM_660.33` | reconocido y construible; el menú necesita el mismo registro de overlay que la versión PAL |
+| Japón (`Oz`) | `SLPM_660.33` | compila y muestra el attract «OZ» a 60 fps; menú y misiones por verificar |
 - **Jugar/Detener**: lanza `ps2run` con el ISO, la tarjeta, la resolución y el formato
   elegidos.
 

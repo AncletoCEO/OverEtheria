@@ -138,6 +138,26 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\capture-window.ps1 -
 - El diálogo se dibuja con retratos intercambiables y texto con efecto de máquina de
   escribir; no hubo `missing code` en ninguna de las corridas.
 
+## Versiones del juego
+
+| Disco | Serial | Estado medido |
+|---|---|---|
+| PAL (`Sword of Etheria, The (Europe)`) | `SLES_537.68` | completo: menú, memory card, menú principal, cutscene y gameplay |
+| PAL *undub* v1.0 | `SLES_537.68` | mismo ELF que PAL (SHA-256 idéntico): usa el mismo build |
+| Japón (`Oz`) | `SLPM_660.33` | compila (223 unidades) y llega al attract «PRESS START BUTTON / OZ» a 60 fps |
+
+Notas de la versión japonesa:
+
+- Su ELF no trae `PT_LOAD` en `0x100000`: `scripts/patch-elf-window.py` reutiliza una
+  entrada ejecutable vacía para crear la ventana.
+- Los overlays están en las mismas bases (`0x100000` y `0x154000`), pero su
+  `menu.bin` mide `0x55640` de texto y no tiene `_static_init` (rango vacío).
+- **Necesita `--memcard`**: sin tarjeta la pantalla queda negra (el launcher siempre
+  pasa una).
+- El registro del menú se automatiza con `scripts/register-overlay.py`, que saca
+  `menu.bin` de `OL.BIN`, escribe la imagen completa y una imagen de `_static_init`
+  aparte, y emite las entradas del rango de texto.
+
 ## Contenido extraído: jugar sin ISO
 
 Igual que en Yakumo, el ISO se usa **una sola vez**: la preparación extrae todo su

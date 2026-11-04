@@ -92,12 +92,23 @@ class Iso:
 def main():
     parser = argparse.ArgumentParser(description='Extrae un ISO de PS2 a una carpeta.')
     parser.add_argument('iso')
-    parser.add_argument('dest')
+    parser.add_argument('dest', help='carpeta de destino, o el archivo de salida con --pick')
+    parser.add_argument('--pick', metavar='NOMBRE', help='extrae sólo ese archivo (p. ej. OL.BIN)')
     parser.add_argument('--force', action='store_true', help='reescribe todo aunque ya esté')
     args = parser.parse_args()
 
     iso = Iso(args.iso)
     iso.index()
+
+    if args.pick:
+        wanted = args.pick.upper()
+        for lba, size, rel in iso.files:
+            if rel.upper() == wanted or rel.upper().endswith('/' + wanted):
+                with open(args.dest, 'wb') as out:
+                    out.write(iso.read(lba, size))
+                print('[extract] %s: %d bytes en %s' % (rel, size, args.dest))
+                return
+        raise SystemExit('no está %s en %s' % (args.pick, args.iso))
     print('[extract] %s: %d archivos, %.1f GB' % (args.iso, len(iso.files), sum(s for _, s, _ in iso.files) / 1e9))
     os.makedirs(args.dest, exist_ok=True)
 
