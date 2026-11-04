@@ -4,7 +4,7 @@
 
 - [x] `game_exe()` devuelve `ps2run.exe` en Windows y `ps2run` en Linux/macOS.
 - [x] `game_built()` y el mensaje final usan esa ruta.
-- [ ] Verificar en Linux: preparación con éxito → «listo para jugar», no «falló (código 0)».
+- [x] Verificar en Linux: preparación con éxito → «listo para jugar», no «falló (código 0)».
 - [x] Añadir una prueba de humo que cubra el nombre del binario por plataforma.
 
 **Gate**: con la preparación ya hecha, el launcher muestra el juego como listo.
