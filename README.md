@@ -9,6 +9,20 @@ un runtime nativo portable, sin emulador, que después se pueda llevar a otras c
 > ELF, `.BIN`, `.PSS`, IRX, texturas, C++ generado ni C decompilado. Necesitás tu propia
 > copia del juego. El C decompilado es obra derivada y queda sólo en local.
 
+## Descargas
+
+Última release: **[v0.1.1](https://github.com/AncletoCEO/OverEtheria/releases/latest)**
+
+| Plataforma | Archivo |
+|---|---|
+| Windows (x86-64) | `OverEtheria-0.1.1-windows-x86_64.zip` |
+| Linux (x86-64) | `OverEtheria-0.1.1-linux-x86_64.AppImage` |
+
+El paquete trae el launcher, los scripts y los parches. **No incluye contenido del
+juego**: al abrirlo pedís tu ISO, el launcher clona el runtime, construye el juego en tu
+equipo y extrae el contenido (después el ISO ya no hace falta). Necesitás el toolchain
+de [Requisitos](#requisitos).
+
 ## Estado
 
 **El juego arranca y corre en nativo.** El menú de video, el diálogo de memory card, el
