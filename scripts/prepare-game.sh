@@ -92,7 +92,8 @@ pattern="python3"
 
 # Overlays del menú: el pipeline sólo captura ventanas de 16 KiB; se registran desde OL.BIN.
 overlays="$game/games/$game_id/overlays"
-if ! ls "$overlays"/*.bin > /dev/null 2>&1; then
+registered="$overlays/.registered"
+if ! ls "$overlays"/*.bin > /dev/null 2>&1 || [ ! -f "$registered" ]; then
     progress 62 "preparando el menú del juego"
     ol="$data/$game_id-OL.BIN"
     say "leyendo y registrando el menú del juego"
@@ -100,6 +101,8 @@ if ! ls "$overlays"/*.bin > /dev/null 2>&1; then
     "$pattern" "$repo/scripts/register-overlay.py" "$ol" menu.bin "$overlays" >> "$game/games/$game_id/entries.txt"
     progress 65 "terminando la construcción"
     (cd "$game" && bash scripts/port.sh "$game_id" "$iso" --native-only)
+    mkdir -p "$overlays"
+    : > "$registered"
     progress 70 "menú registrado"
 fi
 

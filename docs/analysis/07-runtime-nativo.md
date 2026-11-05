@@ -161,8 +161,10 @@ Notas de la versión japonesa:
 - **Necesita `--memcard`**: sin tarjeta la pantalla queda negra (el launcher siempre
   pasa una).
 - El registro del menú se automatiza con `scripts/register-overlay.py`, que saca
-  `menu.bin` de `OL.BIN`, escribe la imagen completa y una imagen de `_static_init`
-  aparte, y emite las entradas del rango de texto.
+  `menu.bin` de `OL.BIN`, escribe la imagen completa y una imagen por cada dirección de
+  `_static_init`, y emite las entradas del rango de texto. `_static_init` es una **tabla
+  de punteros** (en PAL, `0x1A1B20` apunta a `0x1A1B00`): el script crea la imagen en la
+  dirección apuntada, que es donde está el código.
 
 ## Contenido extraído: jugar sin ISO
 

@@ -69,22 +69,35 @@ def main():
     print('# imagen %s: base 0x%x, text 0x%x, data 0x%x' %
           (image, module['base'], module['text'], module['data']), file=sys.stderr)
 
-    init_name = None
+    init_names = []
     start, end = module['static_init'], module['static_init_end']
     if start and end > start:
+        # `_static_init` is the table of function pointers to run, not the code itself:
+        # in the PAL menu it is 0x1A1B20 and the one pointer inside is 0x1A1B00, where
+        # the code lives. Each pointed address gets its own small image.
         offset = start - module['base']
-        code = blob[offset:offset + (end - start)]
-        code += b'\x00' * ((4 - len(code) % 4) % 4)
-        if len(code) < 0x400:
-            code += b'\x00' * (0x400 - len(code))
-        init_crc = binascii.crc32(code) & 0xFFFFFFFF
-        init_name = '%08X_%08X' % (start, init_crc)
-        open(os.path.join(out_dir, init_name + '.bin'), 'wb').write(code)
-        print('# static init 0x%x..0x%x: %s' % (start, end, init_name), file=sys.stderr)
+        table = blob[offset:offset + (end - start)]
+        starts = []
+        for at in range(0, len(table) - 3, 4):
+            target = struct.unpack_from('<I', table, at)[0]
+            if module['base'] <= target < module['base'] + len(blob) and target not in starts:
+                starts.append(target)
+        if not starts:  # no table: the field points at the code
+            starts = [start]
+        for target in starts[:64]:
+            code = blob[target - module['base']:target - module['base'] + 0x400]
+            code += b'\x00' * ((4 - len(code) % 4) % 4)
+            if len(code) < 0x400:
+                code += b'\x00' * (0x400 - len(code))
+            init_crc = binascii.crc32(code) & 0xFFFFFFFF
+            init_name = '%08X_%08X' % (target, init_crc)
+            open(os.path.join(out_dir, init_name + '.bin'), 'wb').write(code)
+            init_names.append(init_name)
+            print('# static init 0x%x: %s' % (target, init_name), file=sys.stderr)
 
     for offset in range(HEADER, HEADER + module['text'], 4):
         print('%s:%x' % (image[:-4], offset))
-    if init_name:
+    for init_name in init_names:
         print('%s:0' % init_name)
 
 

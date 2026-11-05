@@ -140,7 +140,9 @@ if (-not $run) { Say 'la construcción terminó sin el ejecutable del juego'; ex
 $games = Join-Path $Game 'games'
 $overlays = Join-Path $games "$GameId\overlays"
 $entries = Join-Path $games "$GameId\entries.txt"
-$have_overlay = (Test-Path $overlays) -and ((Get-ChildItem $overlays -Filter '*.bin' -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0)
+$registered = Join-Path $overlays '.registered'
+$have_overlay = (Test-Path $registered) -and (Test-Path $overlays) -and
+    ((Get-ChildItem $overlays -Filter '*.bin' -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0)
 if (-not $have_overlay) {
     EmitProgress 62 'preparando el menú del juego'
     $ol = Join-Path $Data "$GameId-OL.BIN"
@@ -154,6 +156,7 @@ if (-not $have_overlay) {
         RunStep "terminando la construcción" "cd '$game_posix' && bash scripts/port.sh $GameId '$iso_posix' --native-only" 63 70
         if ($script:last_code -ne 0) { Say 'la construcción falló al registrar el menú'; exit 1 }
     }
+    New-Item -ItemType File -Force $registered | Out-Null
 }
 
 # 4. contenido del ISO, para no volver a usarlo
