@@ -267,6 +267,8 @@ int main(int argc, char **argv) {
 
     bool running = false;
     std::string play_error;
+    Uint32 play_started = 0;
+    bool play_closed_early = false;
     bool quit = false;
     while (!quit) {
         SDL_Event event;
@@ -301,6 +303,7 @@ int main(int argc, char **argv) {
         if (running && !oe::game_running()) {
             running = false;
             oe::wait_game();
+            play_closed_early = (SDL_GetTicks() - play_started) < 20000;
         }
         if (!demo_progress && preparing && !oe::prepare_running()) {
             preparing = false;
@@ -530,6 +533,8 @@ int main(int argc, char **argv) {
         ImGui::BeginDisabled(running || !ready);
         if (ImGui::Button("Jugar", ImVec2(160, 40))) {
             play_error.clear();
+            play_closed_early = false;
+            play_started = SDL_GetTicks();
             if (oe::save_config(config)) dirty = false;
             oe::write_keys_ini(config);
             if (oe::spawn_game(config, play_error)) running = true;
@@ -542,9 +547,18 @@ int main(int argc, char **argv) {
             running = false;
         }
         ImGui::EndDisabled();
+        ImGui::SameLine();
+        if (ImGui::Button("Registro del juego")) {
+            const std::string log = oe::game_log(config);
+            oe::open_path(log.empty() ? (fs::path(oe::data_dir()) / "game.log").string() : log);
+        }
         if (!play_error.empty()) {
             ImGui::SameLine();
             ImGui::TextColored(ImVec4(0.95f, 0.55f, 0.45f, 1.0f), "%s", play_error.c_str());
+        }
+        if (play_closed_early) {
+            ImGui::TextColored(ImVec4(0.95f, 0.55f, 0.45f, 1.0f),
+                               "El juego se cerró al empezar. Abrí «Registro del juego» para ver el motivo.");
         }
         if (running) {
             ImGui::SameLine();

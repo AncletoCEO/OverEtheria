@@ -15,6 +15,7 @@
 #include <spawn.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <fcntl.h>
 extern char **environ;
 #endif
 
@@ -138,6 +139,25 @@ std::string game_exe(const Config &c) {
 }
 std::string game_elf(const Config &c) {
     return (fs::path(c.game) / "games" / game_id(c) / "disc" / elf_name(c)).string();
+}
+
+std::string game_log(const Config &c) {
+    // The runtime writes its own log under games/<id>/logs: the newest one is this run's.
+    std::error_code ec;
+    const fs::path dir = fs::path(c.game) / "games" / game_id(c) / "logs";
+    fs::path newest;
+    fs::file_time_type newest_time{};
+    for (fs::directory_iterator it(dir, ec), end; !ec && it != end; it.increment(ec)) {
+        std::error_code file_error;
+        if (!it->is_regular_file(file_error) || file_error) continue;
+        const auto time = fs::last_write_time(*it, file_error);
+        if (file_error) continue;
+        if (newest.empty() || time > newest_time) {
+            newest = *it;
+            newest_time = time;
+        }
+    }
+    return newest.empty() ? "" : newest.string();
 }
 
 void apply_environment(const Config &c) {
@@ -322,11 +342,25 @@ bool spawn_game(const Config &c, std::string &error) {
 #ifdef _WIN32
     std::wstring cmd;
     for (const auto &a : args) cmd += (cmd.empty() ? L"" : L" ") + quote(a);
+    // The game's own output goes to <data>/game.log: when it closes on its own, the reason is there.
+    SECURITY_ATTRIBUTES inherit{sizeof inherit, nullptr, TRUE};
+    const std::wstring log_path = wide((fs::path(data_dir()) / "game.log").string());
+    HANDLE log = CreateFileW(log_path.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, &inherit, OPEN_ALWAYS,
+                             FILE_ATTRIBUTE_NORMAL, nullptr);
     STARTUPINFOW si{};
     si.cb = sizeof si;
+    if (log != INVALID_HANDLE_VALUE) {
+        si.dwFlags = STARTF_USESTDHANDLES;
+        si.hStdOutput = log;
+        si.hStdError = log;
+        si.hStdInput = nullptr;
+    }
     PROCESS_INFORMATION pi{};
-    if (!CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi)) {
-        error = "No se pudo iniciar ps2run.exe.";
+    const BOOL started = CreateProcessW(nullptr, cmd.data(), nullptr, nullptr, log != INVALID_HANDLE_VALUE, 0, nullptr,
+                                        nullptr, &si, &pi);
+    if (log != INVALID_HANDLE_VALUE) CloseHandle(log);
+    if (!started) {
+        error = "No se pudo iniciar el juego.";
         return false;
     }
     CloseHandle(pi.hThread);
@@ -337,13 +371,22 @@ bool spawn_game(const Config &c, std::string &error) {
     std::vector<char *> argv;
     for (auto &a : args) argv.push_back(a.data());
     argv.push_back(nullptr);
-    pid_t pid = fork();
+    const pid_t pid = fork();
     if (pid == 0) {
+        std::error_code ec;
+        fs::create_directories(data_dir(), ec);
+        const std::string log_path = (fs::path(data_dir()) / "game.log").string();
+        const int log_fd = open(log_path.c_str(), O_CREAT | O_WRONLY | O_APPEND, 0644);
+        if (log_fd >= 0) {
+            dup2(log_fd, STDOUT_FILENO);
+            dup2(log_fd, STDERR_FILENO);
+            if (log_fd > STDERR_FILENO) close(log_fd);
+        }
         execv(argv[0], argv.data());
         _exit(127);
     }
     if (pid < 0) {
-        error = "No se pudo iniciar ps2run.";
+        error = "No se pudo iniciar el juego.";
         return false;
     }
     g_game_pid = pid;

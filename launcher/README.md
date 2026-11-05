@@ -32,7 +32,9 @@ cae al ISO.
 | PAL *undub* v1.0 | `SLES_537.68` | completo (mismo ejecutable) |
 | Japón (`Oz`) | `SLPM_660.33` | compila y muestra el attract «OZ» a 60 fps; menú y misiones por verificar |
 - **Jugar/Detener**: lanza `ps2run` con el ISO, la tarjeta, la resolución y el formato
-  elegidos.
+  elegidos. El juego escribe su salida en `data/game.log` y en `games/<id>/logs`; el
+  botón «Registro del juego» abre el más reciente, y si el juego se cierra al empezar el
+  launcher lo avisa.
 
 ## Compilar
 
